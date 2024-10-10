@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:luckybiky/screens/home.dart';
 import 'package:luckybiky/screens/search.dart';
 import 'package:luckybiky/screens/profile.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 
 void main() {
+  await _initialize;
   runApp(SplashScreen());
+}
+
+// 지도 초기화하기
+Future<void> _initialize() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NaverMapSdk.instance.initialize(
+    clientId: '<client id>',     // 클라이언트 ID 설정
+    onAuthFailed: (ex) => log("****네이버맵 인증오류 : $ex", name: "onAuthFailed")
+  );
 }
 
 class SplashScreen extends StatelessWidget {
