@@ -19,7 +19,6 @@ class SplashScreen extends StatelessWidget {
         home: AnimatedSplashScreen(
             duration: 4500,
             splash: Image.asset('assets/images/bike.gif'),
-            splashIconSize: double.maxFinite,
             nextScreen: mainHome(),
             splashTransition: SplashTransition.fadeTransition,
             //pageTransitionType: PageTransitionType.scale,
@@ -43,7 +42,13 @@ class _mainHomeState extends State<mainHome> {
       home: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: Text('luckybikey'),
+          title: Text(
+            "luckybikey",
+            style: TextStyle(
+              color: Colors.lightGreen,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           backgroundColor: Colors.white,
           elevation: 0.0,
         ),
