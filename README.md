@@ -1,6 +1,5 @@
-# luckybiky
-
-A new Flutter project.
+# luckybikey
+SW project - Team F
 
 ## Getting Started
 
