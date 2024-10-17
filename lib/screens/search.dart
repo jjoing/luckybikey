@@ -1,10 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-
-import 'package:provider/provider.dart';
 
 
 class Search extends StatefulWidget {
@@ -29,13 +26,14 @@ class _SearchState extends State<Search> {
             children: [
               SizedBox(height: 10),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   SizedBox(width: 10,),
                   Column(
                     children: [
                       Container(
                         height: 50,
-                        width: MediaQuery.of(context).size.width*0.6,
+                        width: MediaQuery.of(context).size.width*0.65,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(5),
                           color: Colors.white70
@@ -50,7 +48,7 @@ class _SearchState extends State<Search> {
                       SizedBox(height: 10),
                       Container(
                         height: 50,
-                        width: MediaQuery.of(context).size.width*0.6,
+                        width: MediaQuery.of(context).size.width*0.65,
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(5),
                             color: Colors.white70
@@ -64,7 +62,6 @@ class _SearchState extends State<Search> {
                       ),
                     ],
                   ),
-                  SizedBox(width: 7,),
                   SizedBox(
                     width: 10,
                     child: IconButton(
@@ -73,12 +70,11 @@ class _SearchState extends State<Search> {
                       icon: const Icon(Icons.swap_vert),
                     ),
                   ),
-                  SizedBox(width: 15,),
                   SizedBox(
-                    width: 120,
-                    child: ElevatedButton(
+                    width: 80,
+                    child: IconButton(
                       onPressed: () => {},
-                      child: const Text('공유 자전거\n모드', textAlign: TextAlign.center ),
+                      icon: Image.asset('assets/images/share_bike_logo.jpeg'),
                     ),
                   ),
                 ],
