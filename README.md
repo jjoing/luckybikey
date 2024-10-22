@@ -1,9 +1,12 @@
 
 # 2024 SW project(IIT4204.01-00) Team F : Luckybikey
+
+## 🚲 Luckybikey
+
 <details>
 <summary>Table of Contents</summary>
 
-- [2024 SW project(IIT4204.01-00) Team F : Luckybikey](#2024-SW-project(IIT4204.01-00)-Team-F-:-Luckybikey)
+- [🚲 Luckybikey](#-luckybikey)
   - [💡 Introduction](#-introduction)
   - [🤝 Contributors](#-contributors)
  
