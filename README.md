@@ -1,6 +1,20 @@
-# luckybikey
-24-2 SW project(IIT4204.01-00) - Team F
 
+# 2024 SW project(IIT4204.01-00) Team F : Luckybikey
+<details>
+<summary>Table of Contents</summary>
+
+- [2024 SW project(IIT4204.01-00) Team F : Luckybikey](#2024-SW-project(IIT4204.01-00)-Team-F-:-Luckybikey)
+  - [💡 Introduction](#-introduction)
+  - [🤝 Contributors](#-contributors)
+ 
+ 
+</details>
+
+## 💡 Introduction
+
+**Luckybikey** is a bicycle route finding application that tells users of bike routes that reflect their tastes. We receive the user's tastes in advance and reflect it in the algorithm to find the bike path. We also help users find their way by reflecting that stop if they use a shared bike like "따릉이". Our application is for everyone who uses bicycles.
+
+Our problem statement is that when we use bicycles as transportation, the user is under a variety of stresses. Cycling has been hindered by many environmental facotrs, such as the location of shared bycycle stops, the presence or absenece of bicylce paths, uphill paths and else. So, we tried to solve this problem by providing a customized route by receiving user preferences such as uphill preference, whether or not to use shared bicycles and else. 
 
 
 ## 🤝 Contributors
