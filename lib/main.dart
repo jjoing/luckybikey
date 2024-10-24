@@ -9,6 +9,7 @@ import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:provider/provider.dart';
 
+import 'package:luckybiky/utils/mapAPI.dart';
 import 'package:luckybiky/screens/home.dart';
 import 'package:luckybiky/screens/searchScreen/search.dart';
 import 'package:luckybiky/screens/profileScreen/profile.dart';
@@ -32,7 +33,7 @@ void main() async {
 Future<void> _initialize() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NaverMapSdk.instance.initialize(
-      clientId: 'zuupv435hj',
+      clientId: map_id,
       onAuthFailed: (e) => log("네이버맵 인증오류 : $e", name: "onAuthFailed")
   );
 }
