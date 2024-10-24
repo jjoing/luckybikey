@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:provider/provider.dart';
 
 import 'package:luckybiky/screens/home.dart';
-import 'package:luckybiky/screens/search.dart';
+import 'package:luckybiky/screens/searchScreen/search.dart';
 import 'package:luckybiky/screens/profileScreen/profile.dart';
 import 'package:luckybiky/screens/profileScreen/preference_provider.dart';
 
@@ -15,6 +18,9 @@ import 'package:luckybiky/screens/profileScreen/preference_provider.dart';
 
 void main() async {
   await _initialize();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(
       ChangeNotifierProvider(
         create: (context) => PreferenceProvider(),
