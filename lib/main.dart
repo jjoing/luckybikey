@@ -2,25 +2,39 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:provider/provider.dart';
 
+import 'package:luckybiky/utils/mapAPI.dart';
 import 'package:luckybiky/screens/home.dart';
-import 'package:luckybiky/screens/search.dart';
-import 'package:luckybiky/screens/profile.dart';
+import 'package:luckybiky/screens/searchScreen/search.dart';
+import 'package:luckybiky/screens/profileScreen/profile.dart';
+import 'package:luckybiky/screens/profileScreen/preference_provider.dart';
 
 
 
 void main() async {
   await _initialize();
-  runApp(SplashScreen());
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(
+      ChangeNotifierProvider(
+        create: (context) => PreferenceProvider(),
+        child: SplashScreen(),
+      ),
+  );
 }
 
 Future<void> _initialize() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NaverMapSdk.instance.initialize(
-    clientId: '**********',
-  onAuthFailed: (e) => log("네이버맵 인증오류 : $e", name: "onAuthFailed")
+      clientId: map_id,
+      onAuthFailed: (e) => log("네이버맵 인증오류 : $e", name: "onAuthFailed")
   );
 }
 
@@ -94,4 +108,3 @@ class _mainHomeState extends State<mainHome> {
     });
   }
 }
-
