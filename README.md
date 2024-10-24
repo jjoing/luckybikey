@@ -8,7 +8,10 @@
 
 - [🚲 Luckybikey](#-luckybikey)
   - [💡 Introduction](#-introduction)
+  - [🛳 User Guide](#-user-guide)
+  - [🛠 Project Architecture](#-project-architecture)
   - [🤝 Contributors](#-contributors)
+
  
  
 </details>
@@ -20,9 +23,13 @@
 Our problem statement is that when we use bicycles as transportation, the user is under a variety of stresses. Cycling has been hindered by many environmental facotrs, such as the location of shared bycycle stops, the presence or absenece of bicylce paths, uphill paths and else. So, we tried to solve this problem by providing a customized route by receiving user preferences such as uphill preference, whether or not to use shared bicycles and else. 
 
 
+## 🛳 User Guide
+
+## 🛠 Project Architecture
+
 ## 🤝 Contributors
 
 | [Yoonbin Cho](https://github.com/jjoing)                            | [Junkyu Jang](https://github.com/JoonkyuJang)                          | [Yejin Kim](https://github.com/)                       | [Seungjae Lee](https://github.com/BbiBbalkBbulk)                          |
 | ----------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
 | <img src="https://avatars.githubusercontent.com/u/143711988?v=4"> | <img src="https://avatars.githubusercontent.com/u/91795709?v=4"> | <img src="https://avatars.githubusercontent.com/u/69153412?v=4"> | <img src="https://avatars.githubusercontent.com/u/152205395?v=4"> |
-| FE / PM                                                        | FE / Algorithm / Leader                                                     | BE / Algorithm                                                      | BE                                                          |
+| FE / PM                                                        | BE / Algorithm / Leader                                                     | Algorithm                                                      | BE                                                          |
