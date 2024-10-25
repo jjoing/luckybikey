@@ -42,5 +42,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Sensitive API Keys
 android/app/google-services.json
 lib/utils/mapAPI.dart
