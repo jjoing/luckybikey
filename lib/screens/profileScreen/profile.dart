@@ -3,14 +3,18 @@ import 'package:provider/provider.dart';
 import 'preference_provider.dart';
 
 class Profile extends StatelessWidget {
-  final List<String> likeOptions = ['풍경', '최단거리', '자전거 전용도로'];
-  final List<String> dislikeOptions = ['오르막길', '차도', '인도'];
+  final List<String> likeOptions = ['풍경', '최단거리', '자전거 전용도로',];
+  final List<String> dislikeOptions = ['오르막길', '차도', '인도', '통행량'];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('선호도 설정'),
+        title: Text('선호도 설정',
+          style: TextStyle(
+          fontSize: 25,
+          fontWeight: FontWeight.bold
+        ),),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -18,14 +22,14 @@ class Profile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '좋아요',
+              '좋아요!',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
             ...likeOptions.map((option) => PreferenceButton(option: option, type: 'like')),
             SizedBox(height: 20),
             Text(
-              '싫어요',
+              '싫어요!',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),

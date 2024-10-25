@@ -3,10 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:csv/csv.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:luckybiky/screens/searchScreen/modal.dart';
 import 'package:luckybiky/contents/way_sample_data.dart';
 
+
+void _permission() async {
+  var requestStatus = await Permission.location.request();
+  var status = await Permission.location.status;
+  if (requestStatus.isPermanentlyDenied || status.isPermanentlyDenied) {
+    openAppSettings();
+  }
+}
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -20,16 +29,17 @@ class _SearchState extends State<Search> {
 
   @override
   void initState() {
+    _permission();
     super.initState();
   }
 
-  List<NLatLng> sampleData3Coords = Sample_Data_3.map((point) {
+  List<NLatLng> sampleData2Coords = Sample_Data_2.map((point) {
     return NLatLng(point['lat'], point['lon']);
   }).toList();
 
     @override
   Widget build(BuildContext context) {
-    final Completer<NaverMapController> _mapControllerCompleter = Completer();
+      final Completer<NaverMapController> _mapControllerCompleter = Completer();
 
     return Stack(
       children: [
@@ -90,7 +100,7 @@ class _SearchState extends State<Search> {
                     child: IconButton(
                       onPressed: () async {
 
-                        },
+                      },
                       icon: Image.asset('assets/images/share_bike_logo.jpeg'),
                     ),
                   ),
@@ -104,11 +114,12 @@ class _SearchState extends State<Search> {
                 ),
                 child: NaverMap(
                     options: const NaverMapViewOptions(
-                      mapType: NMapType.basic,
-                      activeLayerGroups: [
-                        NLayerGroup.bicycle,
-                        // NLayerGroup.transit,
-                      ],
+                        mapType: NMapType.basic,
+                        activeLayerGroups: [
+                          NLayerGroup.bicycle,
+                          // NLayerGroup.traffic,
+                          // NLayerGroup.transit,
+                        ],
                         initialCameraPosition: NCameraPosition(
                             target: NLatLng(37.525313, 126.9226753),
                             zoom: 12,
@@ -119,22 +130,21 @@ class _SearchState extends State<Search> {
                         contentPadding: EdgeInsets.all(10)// default : [NLayerGroup.building]
                     ),
                     forceGesture: true,
-                    onMapReady: (controller) async {
-                      await _mapControllerCompleter.future;
+                    onMapReady: (controller) {
                       _mapControllerCompleter.complete(controller);
 
                       final path = NPathOverlay(
-                        id: 'samplePath3',
-                        coords: sampleData3Coords,  // NLatLng로 변환된 좌표 리스트
-                        color: Colors.blue,
+                        id: 'samplePath2',
+                        coords: sampleData2Coords,  // NLatLng로 변환된 좌표 리스트
+                        color: Colors.lightGreen,
                         width: 5,
                       );
 
-                      print(sampleData3Coords);
+                      const LatLng1 = NLatLng(37.525313, 126.9226753);
 
                       final marker = NMarker(
                         id: 'testMarker',
-                        position: NLatLng(37.525313, 126.9226753),  // 서울 좌표
+                        position: LatLng1,  // 서울 좌표
                       );
 
                       controller.addOverlay(marker);
