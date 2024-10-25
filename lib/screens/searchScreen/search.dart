@@ -9,14 +9,6 @@ import 'package:luckybiky/screens/searchScreen/modal.dart';
 import 'package:luckybiky/contents/way_sample_data.dart';
 
 
-void _permission() async {
-  var requestStatus = await Permission.location.request();
-  var status = await Permission.location.status;
-  if (requestStatus.isPermanentlyDenied || status.isPermanentlyDenied) {
-    openAppSettings();
-  }
-}
-
 class Search extends StatefulWidget {
   const Search({super.key});
 
@@ -25,7 +17,13 @@ class Search extends StatefulWidget {
 }
 
 class _SearchState extends State<Search> {
-
+  void _permission() async {
+    var requestStatus = await Permission.location.request();
+    var status = await Permission.location.status;
+    if (requestStatus.isPermanentlyDenied || status.isPermanentlyDenied) {
+      openAppSettings();
+    }
+  }
 
   @override
   void initState() {
