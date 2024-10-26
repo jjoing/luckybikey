@@ -201,4 +201,4 @@ def request_route(req: https_fn.CallableRequest) -> dict:
     route = start_point_node + result["route"] + end_point_node
     full_distance = start_dist + result["full_distance"] + end_dist
 
-    return {"route": route, "full_distance": full_distance}, 200
+    return {"route": route, "full_distance": full_distance}
