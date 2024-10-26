@@ -26,6 +26,10 @@ if (flutterVersionName == null) {
 }
 
 android {
+    defaultConfig{
+        minSdkVersion 23
+    }
+
     namespace "com.example.luckybiky"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
