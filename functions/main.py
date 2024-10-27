@@ -1,5 +1,6 @@
 # Deploy with `firebase deploy` or `firebase deploy --only functions`
-# For more information, see https://firebase.google.com/docs/functions/locations
+# For more information, see https://firebase.google.com/docs/functions/manage-functions
+# and https://firebase.google.com/docs/functions/callable
 
 from firebase_admin import initialize_app, firestore
 from firebase_functions import https_fn
