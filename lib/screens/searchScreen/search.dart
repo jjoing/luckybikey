@@ -1,13 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-import 'package:csv/csv.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:luckybiky/screens/searchScreen/modal.dart';
 import 'package:luckybiky/contents/way_sample_data.dart';
-
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -35,9 +32,12 @@ class _SearchState extends State<Search> {
     return NLatLng(point['lat'], point['lon']);
   }).toList();
 
-    @override
+  Key _mapKey = UniqueKey();  // 지도 리로드를 위한 Key
+  bool _showMarker = false;  // 마커 표시 여부
+
+  @override
   Widget build(BuildContext context) {
-      final Completer<NaverMapController> _mapControllerCompleter = Completer();
+    final Completer<NaverMapController> _mapControllerCompleter = Completer();
 
     return Stack(
       children: [
@@ -51,36 +51,36 @@ class _SearchState extends State<Search> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(width: 10,),
+                  SizedBox(width: 10),
                   Column(
                     children: [
                       Container(
                         height: 50,
-                        width: MediaQuery.of(context).size.width*0.65,
+                        width: MediaQuery.of(context).size.width * 0.65,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(5),
-                          color: Colors.white70
+                          color: Colors.white70,
                         ),
                         child: TextField(
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(),
-                              labelText: '출발지 입력',
-                            )
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: '출발지 입력',
+                          ),
                         ),
                       ),
                       SizedBox(height: 10),
                       Container(
                         height: 50,
-                        width: MediaQuery.of(context).size.width*0.65,
+                        width: MediaQuery.of(context).size.width * 0.65,
                         decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                            color: Colors.white70
+                          borderRadius: BorderRadius.circular(5),
+                          color: Colors.white70,
                         ),
                         child: TextField(
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(),
-                              labelText: '도착지 입력',
-                            )
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: '도착지 입력',
+                          ),
                         ),
                       ),
                     ],
@@ -97,7 +97,11 @@ class _SearchState extends State<Search> {
                     width: 80,
                     child: IconButton(
                       onPressed: () async {
-
+                        // 버튼을 눌렀을 때 지도를 다시 로드하고 마커를 표시
+                        setState(() {
+                          _mapKey = UniqueKey();  // 지도 다시 로드
+                          _showMarker = true;     // 마커 표시 설정
+                        });
                       },
                       icon: Image.asset('assets/images/share_bike_logo.jpeg'),
                     ),
@@ -106,49 +110,50 @@ class _SearchState extends State<Search> {
               ),
               SizedBox(height: 20),
               Container(
-                height: MediaQuery.of(context).size.height*0.6,
+                height: MediaQuery.of(context).size.height * 0.6,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10)
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: NaverMap(
-                    options: const NaverMapViewOptions(
-                        mapType: NMapType.basic,
-                        activeLayerGroups: [
-                          NLayerGroup.bicycle,
-                          // NLayerGroup.traffic,
-                          // NLayerGroup.transit,
-                        ],
-                        initialCameraPosition: NCameraPosition(
-                            target: NLatLng(37.525313, 126.9226753),
-                            zoom: 12,
-                            bearing: 0,
-                            tilt: 0
-                        ),
-                        locationButtonEnable: true,
-                        contentPadding: EdgeInsets.all(10)// default : [NLayerGroup.building]
+                  key: _mapKey,  // 지도 리로드를 위한 Key
+                  options: const NaverMapViewOptions(
+                    mapType: NMapType.basic,
+                    activeLayerGroups: [
+                      NLayerGroup.bicycle,
+                    ],
+                    initialCameraPosition: NCameraPosition(
+                      target: NLatLng(37.525313, 126.9226753),
+                      zoom: 12,
+                      bearing: 0,
+                      tilt: 0,
                     ),
-                    forceGesture: true,
-                    onMapReady: (controller) {
-                      _mapControllerCompleter.complete(controller);
+                    locationButtonEnable: true,
+                    contentPadding: EdgeInsets.all(10),
+                  ),
+                  forceGesture: true,
+                  onMapReady: (controller) {
+                    _mapControllerCompleter.complete(controller);
 
-                      final path = NPathOverlay(
-                        id: 'samplePath2',
-                        coords: sampleData2Coords,  // NLatLng로 변환된 좌표 리스트
-                        color: Colors.lightGreen,
-                        width: 5,
-                      );
+                    final path = NPathOverlay(
+                      id: 'samplePath2',
+                      coords: sampleData2Coords, // NLatLng로 변환된 좌표 리스트
+                      color: Colors.lightGreen,
+                      width: 5,
+                    );
 
+                    controller.addOverlay(path);
+
+                    // 마커를 추가할 조건 검사
+                    if (_showMarker) {
                       const LatLng1 = NLatLng(37.525313, 126.9226753);
-
                       final marker = NMarker(
                         id: 'testMarker',
-                        position: LatLng1,  // 서울 좌표
+                        position: LatLng1, // 마커 위치
                       );
 
                       controller.addOverlay(marker);
-                      controller.addOverlay(path);
-
                     }
+                  },
                 ),
               ),
             ],
@@ -158,7 +163,8 @@ class _SearchState extends State<Search> {
           bottom: 50,
           left: 0,
           right: 0,
-          child: Center(child: ModalContent())),
+          child: Center(child: ModalContent()),
+        ),
       ],
     );
   }
