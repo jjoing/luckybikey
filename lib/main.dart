@@ -14,11 +14,12 @@ import 'package:luckybiky/screens/home.dart';
 import 'package:luckybiky/screens/searchScreen/search.dart';
 import 'package:luckybiky/screens/profileScreen/profile.dart';
 import 'package:luckybiky/screens/profileScreen/preference_provider.dart';
-
+import 'package:luckybiky/login.dart';
 
 
 void main() async {
   await _initialize();
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -48,7 +49,7 @@ class SplashScreen extends StatelessWidget {
         home: AnimatedSplashScreen(
             duration: 3500,
             splash: Image.asset('assets/images/bike.gif'),
-            nextScreen: mainHome(),
+            nextScreen: login(),
             splashTransition: SplashTransition.fadeTransition,
             //pageTransitionType: PageTransitionType.scale,
             backgroundColor: Colors.white));

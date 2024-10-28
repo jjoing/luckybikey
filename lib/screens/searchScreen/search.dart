@@ -89,21 +89,14 @@ class _SearchState extends State<Search> {
                     width: 10,
                     child: IconButton(
                       padding: EdgeInsets.zero,
-                      onPressed: () => {},
-                      icon: const Icon(Icons.swap_vert),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 80,
-                    child: IconButton(
-                      onPressed: () async {
-                        // 버튼을 눌렀을 때 지도를 다시 로드하고 마커를 표시
+                      onPressed: () {
+                        // 버튼을 눌렀을 때 _showMarker 상태를 토글하고 지도를 리로드
                         setState(() {
-                          _mapKey = UniqueKey();  // 지도 다시 로드
-                          _showMarker = true;     // 마커 표시 설정
+                          _mapKey = UniqueKey();
+                          _showMarker = !_showMarker; // 상태를 토글하여 마커 표시 여부 변경
                         });
                       },
-                      icon: Image.asset('assets/images/share_bike_logo.jpeg'),
+                      icon: const Icon(Icons.location_pin),
                     ),
                   ),
                 ],
@@ -143,7 +136,7 @@ class _SearchState extends State<Search> {
 
                     controller.addOverlay(path);
 
-                    // 마커를 추가할 조건 검사
+                    // 마커 표시 여부에 따라 마커를 추가 또는 제거
                     if (_showMarker) {
                       const LatLng1 = NLatLng(37.525313, 126.9226753);
                       final marker = NMarker(

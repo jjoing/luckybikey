@@ -32,6 +32,7 @@ Our problem statement is that when we use bicycles as transportation, the user i
 - [flutter_naver_map](https://pub.dev/packages/flutter_naver_map)
 - [permission_handler](https://pub.dev/packages/permission_handler)
 - [provider](https://pub.dev/packages/provider)
+- [firebase_auth](https://pub.dev/packages/firebase_auth)
 
 
 ## 🛳 User Guide
