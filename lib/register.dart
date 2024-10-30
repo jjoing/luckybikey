@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:luckybiky/main.dart';
+import 'screens/home.dart';
 
 class register extends StatefulWidget {
   const register({super.key});
@@ -206,9 +206,7 @@ class _registerState extends State<register> {
                               ),
                             ],
                           ),
-                          const SizedBox(
-                            height: 5.0,
-                          ),
+                          const SizedBox(height: 5.0,),
                           // user password text field
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,9 +276,7 @@ class _registerState extends State<register> {
                               ),
                             ],
                           ),
-                          SizedBox(
-                            height: MediaQuery.of(context).viewInsets.bottom,
-                          ),
+                          SizedBox(height: MediaQuery.of(context).viewInsets.bottom,),
                         ],
                       ),
                     ),
@@ -307,7 +303,7 @@ class _registerState extends State<register> {
                         );
 
                         if (newUser.user != null) {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => mainHome()));
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => Home()));
                         }
                       } catch (err) {
                         debugPrint(err.toString());

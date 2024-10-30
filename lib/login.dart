@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:luckybiky/main.dart';
-import 'package:luckybiky/register.dart';
+import 'screens/home.dart';
+import 'register.dart';
 
 class login extends StatefulWidget {
   const login({super.key});
@@ -241,7 +241,7 @@ class _loginState extends State<login> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => mainHome()));
+                                    builder: (context) => Home()));
                           }
                         } catch (err) {
                           print(err);
