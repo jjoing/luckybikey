@@ -25,7 +25,7 @@ class _ModalContentState extends State<ModalContent> {
             builder: (BuildContext context) {
               return Container(
                 height: 200,
-                color: Colors.white70,
+                color: Colors.transparent,
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
