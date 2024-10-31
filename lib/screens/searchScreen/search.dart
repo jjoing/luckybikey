@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -33,9 +32,11 @@ class _SearchState extends State<Search> {
     return NLatLng(point['lat'], point['lon']);
   }).toList();
 
-  Key _mapKey = UniqueKey();  // 지도 리로드를 위한 Key
-  bool _showMarker = false;  // 마커 표시 여부
-  bool _showPath = false;    // 경로 표시 여부
+  Key _mapKey = UniqueKey();
+  bool _showMarker = false;
+  bool _showPath = false;
+  String _stationName = "정류장 이름"; // 예시 정보
+  int _bikeCount = 5; // 예시 남은 자전거 수
 
   @override
   Widget build(BuildContext context) {
@@ -46,14 +47,14 @@ class _SearchState extends State<Search> {
         child: Stack(
           children: [
             Container(
-              decoration: BoxDecoration(color: Colors.white,),
+              decoration: BoxDecoration(color: Colors.white),
               child: ListView(
                 children: [
                   SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      SizedBox(width: 5,),
+                      SizedBox(width: 5),
                       Column(
                         children: [
                           Container(
@@ -100,16 +101,15 @@ class _SearchState extends State<Search> {
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           onPressed: () {
-                            // 버튼을 눌렀을 때 _showPath 상태를 토글하고 지도를 리로드
                             setState(() {
                               _mapKey = UniqueKey();
-                              _showPath = !_showPath; // 상태를 토글하여 경로 표시 여부 변경
+                              _showPath = !_showPath;
                             });
                           },
                           icon: Icon(Icons.search),
                         ),
                       ),
-                      SizedBox(width: 5,),
+                      SizedBox(width: 5),
                     ],
                   ),
                   SizedBox(height: 20),
@@ -119,12 +119,10 @@ class _SearchState extends State<Search> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: NaverMap(
-                      key: _mapKey,  // 지도 리로드를 위한 Key
+                      key: _mapKey,
                       options: const NaverMapViewOptions(
                         mapType: NMapType.basic,
-                        activeLayerGroups: [
-                          NLayerGroup.bicycle,
-                        ],
+                        activeLayerGroups: [NLayerGroup.bicycle],
                         initialCameraPosition: NCameraPosition(
                           target: NLatLng(37.525313, 126.9226753),
                           zoom: 12,
@@ -138,25 +136,34 @@ class _SearchState extends State<Search> {
                       onMapReady: (controller) {
                         _mapControllerCompleter.complete(controller);
 
-                        // _showPath 상태에 따라 경로 오버레이 추가
                         if (_showPath) {
                           final path = NPathOverlay(
                             id: 'samplePath2',
-                            coords: sampleData2Coords, // NLatLng로 변환된 좌표 리스트
+                            coords: sampleData2Coords,
                             color: Colors.lightGreen,
                             width: 5,
                           );
                           controller.addOverlay(path);
                         }
 
-                        // _showMarker 상태에 따라 마커 추가
                         if (_showMarker) {
-                          const LatLng1 = NLatLng(37.525313, 126.9226753);
+                          const target = NLatLng(37.525313, 126.9226753);
                           final marker = NMarker(
                             id: 'testMarker',
-                            position: LatLng1, // 마커 위치
+                            position: target,
                           );
+
+                          // 정보 창 설정
+                          final infoWindow = NInfoWindow.onMarker(
+                            id: marker.info.id,
+                            text: "정류장 이름: $_stationName\n 남은 자전거 수: $_bikeCount대",
+                          );
+
                           controller.addOverlay(marker);
+
+                          marker.setOnTapListener((NMarker marker) {
+                            marker.openInfoWindow(infoWindow);
+                          });// 마커 클릭 시 정보 창 열기
                         }
                       },
                     ),
@@ -172,10 +179,9 @@ class _SearchState extends State<Search> {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   onPressed: () {
-                    // 버튼을 눌렀을 때 _showMarker 상태를 토글하고 지도를 리로드
                     setState(() {
                       _mapKey = UniqueKey();
-                      _showMarker = !_showMarker; // 상태를 토글하여 마커 표시 여부 변경
+                      _showMarker = !_showMarker;
                     });
                   },
                   icon: Image.asset('assets/images/share_bike_logo.jpeg'),
