@@ -118,6 +118,7 @@ def create_node_map(collection_ref: CollectionReference) -> dict[int, Node]:
     return node_map
 
 
+@https_fn.on_call()
 def request_route(req: https_fn.CallableRequest) -> dict:
     try:  # 요청 데이터 파싱
         start_point = req.data["StartPoint"]
