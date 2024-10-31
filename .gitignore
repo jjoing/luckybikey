@@ -31,6 +31,9 @@ migrate_working_dir/
 .pub/
 /build/
 
+# VS Code related
+.vscode/
+
 # Symbolication related
 app.*.symbols
 
