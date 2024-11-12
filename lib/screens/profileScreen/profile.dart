@@ -6,6 +6,8 @@ class Profile extends StatelessWidget {
   final List<String> likeOptions = ['풍경', '최단거리', '자전거 전용도로'];
   final List<String> dislikeOptions = ['오르막길', '차도', '인도', '통행량'];
 
+  Profile({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -14,9 +16,10 @@ class Profile extends StatelessWidget {
           children: [
             const SizedBox(height: 40),
             // 프로필 이미지와 닉네임
-            CircleAvatar(
+            const CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage('assets/images/profile_image.jpg'), // 임의의 프로필 이미지 경로
+              backgroundImage: AssetImage(
+                  'assets/images/profile_image.jpg'), // 임의의 프로필 이미지 경로
             ),
             const SizedBox(height: 10),
             Text(
@@ -44,8 +47,11 @@ class Profile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Divider(thickness: 1, height: 1, color: Colors.lightGreen),
-                  SizedBox(height: 20,),
+                  const Divider(
+                      thickness: 1, height: 1, color: Colors.lightGreen),
+                  const SizedBox(
+                    height: 20,
+                  ),
                   const Text(
                     '선호도 설정',
                     style: TextStyle(
@@ -65,7 +71,10 @@ class Profile extends StatelessWidget {
                   Wrap(
                     spacing: 8.0, // 가로 간격
                     runSpacing: 8.0, // 세로 간격
-                    children: likeOptions.map((option) => PreferenceButton(option: option, type: 'like')).toList(),
+                    children: likeOptions
+                        .map((option) =>
+                            PreferenceButton(option: option, type: 'like'))
+                        .toList(),
                   ),
                   const SizedBox(height: 20),
 
@@ -78,7 +87,10 @@ class Profile extends StatelessWidget {
                   Wrap(
                     spacing: 8.0,
                     runSpacing: 8.0,
-                    children: dislikeOptions.map((option) => PreferenceButton(option: option, type: 'dislike')).toList(),
+                    children: dislikeOptions
+                        .map((option) =>
+                            PreferenceButton(option: option, type: 'dislike'))
+                        .toList(),
                   ),
                 ],
               ),
@@ -94,7 +106,7 @@ class PreferenceButton extends StatelessWidget {
   final String option;
   final String type;
 
-  PreferenceButton({required this.option, required this.type});
+  const PreferenceButton({super.key, required this.option, required this.type});
 
   @override
   Widget build(BuildContext context) {
