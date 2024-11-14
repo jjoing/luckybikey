@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:luckybiky/screens/home.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'preference_provider.dart';
+import 'preferenceSurvey.dart';
 
 class Profile extends StatelessWidget {
-  final List<String> likeOptions = ['풍경', '최단거리', '자전거 전용도로'];
-  final List<String> dislikeOptions = ['오르막길', '차도', '인도', '통행량'];
-
   @override
   Widget build(BuildContext context) {
+    final preferenceProvider = Provider.of<PreferenceProvider>(context);
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -16,7 +19,7 @@ class Profile extends StatelessWidget {
             // 프로필 이미지와 닉네임
             CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage('assets/images/profile_image.jpg'), // 임의의 프로필 이미지 경로
+              backgroundImage: AssetImage('assets/images/profile_image.jpg'),
             ),
             const SizedBox(height: 10),
             Text(
@@ -37,17 +40,15 @@ class Profile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // 선호도 설정
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Divider(thickness: 1, height: 1, color: Colors.lightGreen),
-                  SizedBox(height: 20,),
+                  const SizedBox(height: 20),
                   const Text(
-                    '선호도 설정',
+                    '선호도 설정 결과',
                     style: TextStyle(
                       color: Colors.lightGreen,
                       fontSize: 25,
@@ -56,20 +57,22 @@ class Profile extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 좋아요 옵션 가로 배치
+                  // 좋아요 옵션
                   const Text(
                     '좋아요!',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
-                    spacing: 8.0, // 가로 간격
-                    runSpacing: 8.0, // 세로 간격
-                    children: likeOptions.map((option) => PreferenceButton(option: option, type: 'like')).toList(),
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: preferenceProvider.likes
+                        .map((option) => _buildOptionChip(option, Colors.green))
+                        .toList(),
                   ),
                   const SizedBox(height: 20),
 
-                  // 싫어요 옵션 가로 배치
+                  // 싫어요 옵션
                   const Text(
                     '싫어요!',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -78,7 +81,44 @@ class Profile extends StatelessWidget {
                   Wrap(
                     spacing: 8.0,
                     runSpacing: 8.0,
-                    children: dislikeOptions.map((option) => PreferenceButton(option: option, type: 'dislike')).toList(),
+                    children: preferenceProvider.dislikes
+                        .map((option) => _buildOptionChip(option, Colors.redAccent))
+                        .toList(),
+                  ),
+
+                  const SizedBox(height: 30),
+                  Center(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.lightGreen,
+                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => IntroToSurveyPage(
+                              onContinue: () async {
+                                // 여기서 첫 접속 완료 상태를 업데이트하는 작업
+                                SharedPreferences prefs = await SharedPreferences.getInstance();
+                                await prefs.setBool('isFirstTimeUser', false);
+                              },
+                            ),
+                          ),
+                        );// 명시적으로 'return' 추가
+                      },
+                      child: const Text(
+                        '다시 설문조사 참여하기',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -88,43 +128,12 @@ class Profile extends StatelessWidget {
       ),
     );
   }
-}
 
-class PreferenceButton extends StatelessWidget {
-  final String option;
-  final String type;
-
-  PreferenceButton({required this.option, required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    final preferenceProvider = Provider.of<PreferenceProvider>(context);
-
-    bool isSelected = (type == 'like')
-        ? preferenceProvider.isLiked(option)
-        : preferenceProvider.isDisliked(option);
-
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.green : Colors.white54,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
-      onPressed: () {
-        if (type == 'like') {
-          preferenceProvider.toggleLike(option);
-        } else {
-          preferenceProvider.toggleDislike(option);
-        }
-      },
-      child: Text(
-        option,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.black87,
-        ),
-      ),
+  Widget _buildOptionChip(String label, Color color) {
+    return Chip(
+      label: Text(label),
+      backgroundColor: color,
+      labelStyle: const TextStyle(color: Colors.white),
     );
   }
 }

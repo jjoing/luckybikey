@@ -4,22 +4,48 @@ class PreferenceProvider with ChangeNotifier {
   List<String> likes = [];
   List<String> dislikes = [];
 
-  void toggleLike(String item) {
+  void addLike(String item) {
+    if (!likes.contains(item)) {
+      likes.add(item);
+      notifyListeners();
+    }
+  }
+
+  void addDislike(String item) {
+    if (!dislikes.contains(item)) {
+      dislikes.add(item);
+      notifyListeners();
+    }
+  }
+
+  void removeLike(String item) {
     if (likes.contains(item)) {
       likes.remove(item);
-    } else {
-      likes.add(item);
+      notifyListeners();
     }
-    notifyListeners();
+  }
+
+  void removeDislike(String item) {
+    if (dislikes.contains(item)) {
+      dislikes.remove(item);
+      notifyListeners();
+    }
+  }
+
+  void toggleLike(String item) {
+    if (likes.contains(item)) {
+      removeLike(item);
+    } else {
+      addLike(item);
+    }
   }
 
   void toggleDislike(String item) {
     if (dislikes.contains(item)) {
-      dislikes.remove(item);
+      removeDislike(item);
     } else {
-      dislikes.add(item);
+      addDislike(item);
     }
-    notifyListeners();
   }
 
   bool isLiked(String item) {
