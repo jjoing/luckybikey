@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:ffi';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:convert/convert.dart';
 
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:luckybiky/screens/searchScreen/modal.dart';
 import 'package:luckybiky/contents/way_sample_data.dart';
+import 'package:luckybiky/utils/mapAPI.dart';
 
 import 'package:cloud_functions/cloud_functions.dart';
 
@@ -33,6 +38,35 @@ Future<Map<String, dynamic>> _request_route(req) async {
   return {"route": route, "full_distance": results.data['full_distance']};
 }
 
+Future<List<Map<String, dynamic>>> _search_request(req) async {
+  String query = req['query'];
+  final results = await http.get(
+    Uri.parse(
+        'https://openapi.naver.com/v1/search/local.json?query=$query&display=10&start=1&sort=random'),
+    headers: {
+      "X-Naver-Client-Id": client_id,
+      "X-Naver-Client-Secret": client_secret,
+    },
+  );
+  List<Map<String, dynamic>> result = List<Map<String, dynamic>>.from(
+      jsonDecode(results.body)['items'].map((item) {
+    return {
+      "title": item['title'],
+      "link": item['link'],
+      "category": item['category'],
+      "description": item['description'],
+      "telephone": item['telephone'],
+      "address": item['address'],
+      "roadAddress": item['roadAddress'],
+      "NLatLng": NLatLng(
+          double.parse(item['mapy']) / 10e6, double.parse(item['mapx']) / 10e6),
+      "mapx": item['mapx'],
+      "mapy": item['mapy'],
+    };
+  }));
+  return result;
+}
+
 class _SearchState extends State<Search> {
   void _permission() async {
     var requestStatus = await Permission.location.request();
@@ -53,6 +87,7 @@ class _SearchState extends State<Search> {
   }).toList();
 
   List<NLatLng> route = [];
+  List<Map<String, dynamic>> searchResult = [];
 
   Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
   bool _showMarker = false; // 마커 표시 여부
@@ -130,35 +165,34 @@ class _SearchState extends State<Search> {
                               _mapKey = UniqueKey();
                               _showPath = !_showPath; // 상태를 토글하여 경로 표시 여부 변경
                             });
-                            _testting({"text": "text"}).then((value) {
-                              print(value);
-                              print(value['data']);
-                              print(value['data'].runtimeType);
-                              print(value['message']);
-                              print(value['message'].runtimeType);
-                            }, onError: (error) {
-                              print(error);
-                            });
-                            _request_route({
-                              "StartPoint": {
-                                "lat": 37.5322857,
-                                "lon": 126.9131594
-                              },
-                              "EndPoint": {
-                                "lat": 37.5214849,
-                                "lon": 126.9298773
-                              },
-                              "UseSharing": false,
-                              "UserTaste": false,
-                            }).then((result) {
+                            // _request_route({
+                            //   "StartPoint": {
+                            //     "lat": 37.5322857,
+                            //     "lon": 126.9131594
+                            //   },
+                            //   "EndPoint": {
+                            //     "lat": 37.5264949,
+                            //     "lon": 126.9298773
+                            //   },
+                            //   "UseSharing": false,
+                            //   "UserTaste": false,
+                            // }).then((result) {
+                            //   setState(() {
+                            //     _mapKey = UniqueKey();
+                            //     route = result['route'];
+                            //   });
+                            //   print(result['route']);
+                            //   print(result['route'].runtimeType);
+                            //   print(result['full_distance']);
+                            //   print(result['full_distance'].runtimeType);
+                            // }, onError: (error, stackTrace) {
+                            //   print(error);
+                            // });
+                            _search_request({"query": "경복궁"}).then((result) {
+                              print(result);
                               setState(() {
-                                _mapKey = UniqueKey();
-                                route = result['route'];
+                                searchResult = result;
                               });
-                              print(result['route']);
-                              print(result['route'].runtimeType);
-                              print(result['full_distance']);
-                              print(result['full_distance'].runtimeType);
                             }, onError: (error, stackTrace) {
                               print(error);
                             });
@@ -199,13 +233,6 @@ class _SearchState extends State<Search> {
 
                         // _showPath 상태에 따라 경로 오버레이 추가
                         if (_showPath) {
-                          final path = NPathOverlay(
-                            id: 'samplePath2',
-                            coords: sampleData2Coords, // NLatLng로 변환된 좌표 리스트
-                            color: Colors.lightGreen,
-                            width: 5,
-                          );
-                          controller.addOverlay(path);
                           final path2 = NPathOverlay(
                             id: 'samplePath3',
                             coords: route, // NLatLng로 변환된 좌표 리스트
@@ -223,6 +250,13 @@ class _SearchState extends State<Search> {
                             position: LatLng1, // 마커 위치
                           );
                           controller.addOverlay(marker);
+                          for (var i = 0; i < searchResult.length; i++) {
+                            final marker = NMarker(
+                              id: 'testMarker$i',
+                              position: searchResult[i]['NLatLng'],
+                            );
+                            controller.addOverlay(marker);
+                          }
                         }
                       },
                     ),
