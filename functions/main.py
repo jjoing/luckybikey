@@ -7,12 +7,12 @@ from firebase_functions import https_fn
 from google.cloud.firestore_v1.base_query import FieldFilter
 from google.cloud.firestore import CollectionReference
 
-from typing import Dict, List, TypedDict, Self
-from __future__ import annotations
+from typing import Dict, List, TypedDict
 from geopy.distance import distance
 import heapq
 
 AStarReturn = TypedDict("AStarReturn", {"route": List[Dict[str, float]], "full_distance": float})
+# RequestRouteReturn = TypedDict("RequestRouteReturn", {"full_distance": float})
 RequestRouteReturn = TypedDict("RequestRouteReturn", {"route": List[Dict[str, float]], "full_distance": float})
 
 
@@ -131,6 +131,10 @@ def create_node_map(collection_ref: CollectionReference) -> dict[int, Node]:
 @https_fn.on_call()
 def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
+        # start_lat = req.data["StartPointLat"]
+        # start_lon = req.data["StartPointLon"]
+        # end_lat = req.data["EndPointLat"]
+        # end_lon = req.data["EndPointLon"]
         start_point = req.data["StartPoint"]
         end_point = req.data["EndPoint"]
         use_sharing = req.data["UseSharing"]
@@ -184,33 +188,46 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 시작점에서 가장 가까운 노드 찾기
         nearest_start_node_id, start_dist = get_nearest_node(collection_ref, start_lat, start_lon)
         nearest_start_node = node_map[nearest_start_node_id]
-    except https_fn.HttpsError:
+    except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message="No nodes near the start point were found.",
+            message=f"No nodes near the start point were found. Error: {e.args[0]}",
         )
 
     try:  # 도착점에서 가장 가까운 노드 찾기
         nearest_end_node_id, end_dist = get_nearest_node(collection_ref, end_lat, end_lon)
         nearest_end_node = node_map[nearest_end_node_id]
-    except https_fn.HttpsError:
+    except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message="No nodes near the end point were found.",
+            message="No nodes near the end point were found. Error: {e.args[0]}",
         )
 
     try:  # 시작노드-도착노드 길찾기
         result = astar_road_finder(start_node=nearest_start_node, end_node=nearest_end_node)
-    except https_fn.HttpsError:
+    except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message="No route was found between the start and end points.",
+            message="No route was found between the start and end points. Error: {e.args[0]}",
         )
 
     # 시작점과 도착점을 최종 경로에 추가
-    start_point_node = [{"node_id": None, "lat": start_lat, "lon": start_lon}]
-    end_point_node = [{"node_id": None, "lat": end_lat, "lon": end_lon}]
-    route = start_point_node + result["route"] + end_point_node
-    full_distance = start_dist + result["full_distance"] + end_dist
+    try:
+        start_point_node = [{"node_id": None, "lat": start_lat, "lon": start_lon}]
+        end_point_node = [{"node_id": None, "lat": end_lat, "lon": end_lon}]
+        route = start_point_node + result["route"] + end_point_node
+        full_distance = start_dist + result["full_distance"] + end_dist
+        return {"route": route, "full_distance": full_distance}
+    except Exception as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=(e.args[0]),
+        )
 
-    return {"route": route, "full_distance": full_distance}
+
+@https_fn.on_call()
+def testting(req: https_fn.CallableRequest) -> dict:
+    return {
+        "message": "Hello, world!",
+        "data": [1, 2, 3],
+    }
