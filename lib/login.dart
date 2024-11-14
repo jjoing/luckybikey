@@ -47,10 +47,10 @@ class _loginState extends State<login> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     height: 50,
                   ),
-                  Text(
+                  const Text(
                     'Login',
                     style: TextStyle(
                       color: Colors.lightGreen,
@@ -58,7 +58,7 @@ class _loginState extends State<login> {
                       fontSize: 40
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 50,
                   ),
                   SizedBox(
@@ -68,7 +68,7 @@ class _loginState extends State<login> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Email',),
+                          const Text('Email',),
                           const SizedBox(height: 5.0,),
                           Column(
                             children: [
@@ -126,7 +126,7 @@ class _loginState extends State<login> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Password',
                       ),
                       const SizedBox(
@@ -198,16 +198,16 @@ class _loginState extends State<login> {
                     left: 18.9,
                     child: TextButton(
                       style: ButtonStyle(
-                        padding: MaterialStateProperty.all(
+                        padding: WidgetStateProperty.all(
                           EdgeInsets.zero,
                         ),
                       ),
-                      child: Text(
+                      child: const Text(
                         'New Here? Register',
                       ),
                       onPressed: () {
                         Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => register()));
+                            MaterialPageRoute(builder: (context) => const register()));
                       },
                     ),
                   ),
@@ -241,21 +241,21 @@ class _loginState extends State<login> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => Home()));
+                                    builder: (context) => const Home()));
                           }
                         } catch (err) {
                           print(err);
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
+                            const SnackBar(
+                              content: Text(
                                   'Please check your email and password.'),
                               backgroundColor: Colors.blue,
                             ),
                           );
                         }
                       },
-                      child: Text(
+                      child: const Text(
                         'Login',
                       ),
                     ),

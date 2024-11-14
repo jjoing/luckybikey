@@ -26,7 +26,7 @@ void main() async {
   runApp(
       ChangeNotifierProvider(
         create: (context) => PreferenceProvider(),
-        child: SplashScreen(),
+        child: const SplashScreen(),
       ),
   );
 }
@@ -49,7 +49,7 @@ class SplashScreen extends StatelessWidget {
         home: AnimatedSplashScreen(
             duration: 3500,
             splash: Image.asset('assets/images/bike.gif'),
-            nextScreen: login(),
+            nextScreen: const login(),
             splashTransition: SplashTransition.fadeTransition,
             //pageTransitionType: PageTransitionType.scale,
             backgroundColor: Colors.white));
