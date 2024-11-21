@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:provider/provider.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
 import 'utils/mapAPI.dart';
 import 'screens/home.dart';
@@ -23,6 +24,11 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  KakaoSdk.init(
+    nativeAppKey: kakao_native_key,
+    javaScriptAppKey: kakao_java_key,
+  );
+
   runApp(
       ChangeNotifierProvider(
         create: (context) => PreferenceProvider(),

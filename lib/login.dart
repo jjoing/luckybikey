@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:kakao_flutter_sdk_auth/kakao_flutter_sdk_auth.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 
 import 'screens/home.dart';
 import 'register.dart';
+import 'utils/kakao_login.dart';
+import 'utils/social_login.dart';
 
 class login extends StatefulWidget {
   const login({super.key});
@@ -12,6 +16,7 @@ class login extends StatefulWidget {
 }
 
 class _loginState extends State<login> {
+  final viewModel = MainViewModel(KakaoLogin());
   final _authentication = FirebaseAuth.instance;
 
   final _formKey = GlobalKey<FormState>();
@@ -259,6 +264,27 @@ class _loginState extends State<login> {
                         'Login',
                       ),
                     ),
+                  ),
+                  Column(
+                    children: [
+                      Container(
+                        width: MediaQuery.of(context).size.width*0.3,
+                        child: IconButton(
+                          onPressed: () async {
+                            await viewModel.login();
+                            setState(() {});
+
+                          },
+                          icon: Image.asset('assets/images/kakao_login.png',),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async{
+                          print('\n닉네임: ${viewModel.user?.kakaoAccount?.profile?.nickname}');
+                        },
+                        child: Text('계정 정보 확인'),
+                      ),
+                    ],
                   ),
                 ],
               ),
