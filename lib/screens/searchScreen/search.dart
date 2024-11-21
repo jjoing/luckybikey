@@ -16,19 +16,13 @@ import 'package:luckybiky/utils/mapAPI.dart';
 
 import 'package:cloud_functions/cloud_functions.dart';
 
+enum TtsState { playing, stopped, paused, continued }
+
 class Search extends StatefulWidget {
   const Search({super.key});
 
   @override
   State<Search> createState() => _SearchState();
-}
-
-enum TtsState { playing, stopped, paused, continued }
-
-Future<Map<String, dynamic>> _testting(req) async {
-  final results =
-      await FirebaseFunctions.instance.httpsCallable('testting').call(req);
-  return results.data;
 }
 
 Future<Map<String, dynamic>> _request_route(req) async {
@@ -64,8 +58,8 @@ Future<List<Map<String, dynamic>>> _search_request(req) async {
       "roadAddress": item['roadAddress'],
       "NLatLng": NLatLng(
           double.parse(item['mapy']) / 10e6, double.parse(item['mapx']) / 10e6),
-      "mapx": item['mapx'],
-      "mapy": item['mapy'],
+      "mapx": double.parse(item['mapx']) / 10e6,
+      "mapy": double.parse(item['mapy']) / 10e6,
     };
   }));
   return result;
@@ -80,11 +74,16 @@ class _SearchState extends State<Search> {
     }
   }
 
+  final FlutterTts tts = FlutterTts();
+
   @override
   void initState() {
     _permission();
     super.initState();
-    initTts();
+    tts.setLanguage("ko-KR"); //언어설정
+    tts.setSpeechRate(0.5); //말하는 속도(0.1~2.0)
+    tts.setVolume(0.6); //볼륨(0.0~1.0)
+    tts.setPitch(1); //음높이(0.5~2.0)
   }
 
   List<NLatLng> sampleData2Coords = Sample_Data_2.map((point) {
@@ -92,140 +91,14 @@ class _SearchState extends State<Search> {
   }).toList();
 
   List<NLatLng> route = [];
-  List<Map<String, dynamic>> searchResult = [];
+  List<Map<String, dynamic>> searchResult = [{}, {}];
 
   Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
   bool _showMarker = false; // 마커 표시 여부
   bool _showPath = false; // 경로 표시 여부
 
-  late FlutterTts flutterTts;
-  String? language;
-  String? engine;
-  double volume = 0.5;
-  double pitch = 1.0;
-  double rate = 0.5;
-  bool isCurrentLanguageInstalled = false;
-
-  String? _newVoiceText = "안녕하세요. 반갑습니다.";
-  int? _inputLength;
-
-  TtsState ttsState = TtsState.stopped;
-
-  bool get isPlaying => ttsState == TtsState.playing;
-  bool get isStopped => ttsState == TtsState.stopped;
-  bool get isPaused => ttsState == TtsState.paused;
-  bool get isContinued => ttsState == TtsState.continued;
-
-  bool isAndroid = true;
-
-  dynamic initTts() {
-    flutterTts = FlutterTts();
-
-    _setAwaitOptions();
-
-    if (isAndroid) {
-      _getDefaultEngine();
-      _getDefaultVoice();
-    }
-
-    flutterTts.setStartHandler(() {
-      setState(() {
-        print("Playing");
-        ttsState = TtsState.playing;
-      });
-    });
-
-    flutterTts.setCompletionHandler(() {
-      setState(() {
-        print("Complete");
-        ttsState = TtsState.stopped;
-      });
-    });
-
-    flutterTts.setCancelHandler(() {
-      setState(() {
-        print("Cancel");
-        ttsState = TtsState.stopped;
-      });
-    });
-
-    flutterTts.setPauseHandler(() {
-      setState(() {
-        print("Paused");
-        ttsState = TtsState.paused;
-      });
-    });
-
-    flutterTts.setContinueHandler(() {
-      setState(() {
-        print("Continued");
-        ttsState = TtsState.continued;
-      });
-    });
-
-    flutterTts.setErrorHandler((msg) {
-      setState(() {
-        print("error: $msg");
-        ttsState = TtsState.stopped;
-      });
-    });
-  }
-
-  Future<dynamic> _getLanguages() async => await flutterTts.getLanguages;
-
-  Future<dynamic> _getEngines() async => await flutterTts.getEngines;
-
-  Future<void> _getDefaultEngine() async {
-    var engine = await flutterTts.getDefaultEngine;
-    if (engine != null) {
-      print(engine);
-    }
-  }
-
-  Future<void> _getDefaultVoice() async {
-    var voice = await flutterTts.getDefaultVoice;
-    if (voice != null) {
-      print(voice);
-    }
-  }
-
-  Future<void> _speak() async {
-    await flutterTts.setVolume(volume);
-    await flutterTts.setSpeechRate(rate);
-    await flutterTts.setPitch(pitch);
-
-    if (_newVoiceText != null) {
-      if (_newVoiceText!.isNotEmpty) {
-        await flutterTts.speak(_newVoiceText!);
-      }
-    }
-  }
-
-  Future<void> _setAwaitOptions() async {
-    await flutterTts.awaitSpeakCompletion(true);
-  }
-
-  Future<void> _stop() async {
-    var result = await flutterTts.stop();
-    if (result == 1) setState(() => ttsState = TtsState.stopped);
-  }
-
-  Future<void> _pause() async {
-    var result = await flutterTts.pause();
-    if (result == 1) setState(() => ttsState = TtsState.paused);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    flutterTts.stop();
-  }
-
-  void _onChange(String text) {
-    setState(() {
-      _newVoiceText = text;
-    });
-  }
+  var txt_start = TextEditingController();
+  var txt_end = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -257,8 +130,30 @@ class _SearchState extends State<Search> {
                               borderRadius: BorderRadius.circular(5),
                               color: Colors.white70,
                             ),
-                            child: const TextField(
-                              decoration: InputDecoration(
+                            child: TextField(
+                              controller: txt_start,
+                              onChanged: (value) {
+                                searchResult[0] = {};
+                              },
+                              textInputAction: TextInputAction.go,
+                              onSubmitted: (value) async {
+                                await _search_request({"query": value}).then(
+                                    (result) {
+                                  for (var i = 0; i < result.length; i++) {
+                                    print(result[i]);
+                                  }
+                                  txt_start.text = result[0]['title']
+                                      .replaceAll(
+                                          RegExp(r'<[^>]*>'), ''); // html 태그 제거
+                                  setState(() {
+                                    _mapKey = UniqueKey();
+                                    searchResult[0] = result[0];
+                                  });
+                                }, onError: (error, stackTrace) {
+                                  print(error);
+                                });
+                              },
+                              decoration: const InputDecoration(
                                 border: OutlineInputBorder(),
                                 labelText: '출발지 입력',
                               ),
@@ -272,8 +167,25 @@ class _SearchState extends State<Search> {
                               borderRadius: BorderRadius.circular(5),
                               color: Colors.white70,
                             ),
-                            child: const TextField(
-                              decoration: InputDecoration(
+                            child: TextField(
+                              controller: txt_end,
+                              onChanged: (value) {
+                                searchResult[1] = {};
+                              },
+                              textInputAction: TextInputAction.go,
+                              onSubmitted: (value) async {
+                                await _search_request({"query": value}).then(
+                                    (result) {
+                                  txt_end.text = result[0]['title'];
+                                  setState(() {
+                                    _mapKey = UniqueKey();
+                                    searchResult[1] = result[0];
+                                  });
+                                }, onError: (error, stackTrace) {
+                                  print(error);
+                                });
+                              },
+                              decoration: const InputDecoration(
                                 border: OutlineInputBorder(),
                                 labelText: '도착지 입력',
                               ),
@@ -299,39 +211,38 @@ class _SearchState extends State<Search> {
                               _mapKey = UniqueKey();
                               _showPath = !_showPath; // 상태를 토글하여 경로 표시 여부 변경
                             });
-                            // _request_route({
-                            //   "StartPoint": {
-                            //     "lat": 37.5322857,
-                            //     "lon": 126.9131594
-                            //   },
-                            //   "EndPoint": {
-                            //     "lat": 37.5264949,
-                            //     "lon": 126.9298773
-                            //   },
-                            //   "UseSharing": false,
-                            //   "UserTaste": false,
-                            // }).then((result) {
-                            //   setState(() {
-                            //     _mapKey = UniqueKey();
-                            //     route = result['route'];
-                            //   });
-                            //   print(result['route']);
-                            //   print(result['route'].runtimeType);
-                            //   print(result['full_distance']);
-                            //   print(result['full_distance'].runtimeType);
-                            // }, onError: (error, stackTrace) {
-                            //   print(error);
-                            // });
-                            _search_request({"query": "경복궁"}).then((result) {
-                              print(result);
+                            tts.speak("경로를 찾는 중입니다.");
+                            route = [];
+                            print("speak");
+                            if (searchResult[0].isEmpty ||
+                                searchResult[1].isEmpty) {
+                              print("searchResult is empty");
+                              return;
+                            }
+                            _request_route({
+                              "StartPoint": {
+                                "lat": searchResult[0]['mapy'],
+                                "lon": searchResult[0]['mapx']
+                              },
+                              "EndPoint": {
+                                "lat": searchResult[1]['mapy'],
+                                "lon": searchResult[1]['mapx']
+                              },
+                              "UseSharing": false,
+                              "UserTaste": false,
+                            }).then((result) {
                               setState(() {
-                                searchResult = result;
+                                print("request_route done");
+                                _mapKey = UniqueKey();
+                                route = result['route'];
                               });
+                              // print(result['route']);
+                              // print(result['route'].runtimeType);
+                              // print(result['full_distance']);
+                              // print(result['full_distance'].runtimeType);
                             }, onError: (error, stackTrace) {
                               print(error);
                             });
-                            _speak();
-                            print("speak");
                           },
                           icon: const Icon(Icons.search),
                         ),
@@ -386,13 +297,17 @@ class _SearchState extends State<Search> {
                             position: LatLng1, // 마커 위치
                           );
                           controller.addOverlay(marker);
-                          for (var i = 0; i < searchResult.length; i++) {
-                            final marker = NMarker(
-                              id: 'testMarker$i',
-                              position: searchResult[i]['NLatLng'],
-                            );
-                            controller.addOverlay(marker);
+                        }
+
+                        for (var i = 0; i < searchResult.length; i++) {
+                          if (searchResult[i].isEmpty) {
+                            continue;
                           }
+                          final marker = NMarker(
+                            id: 'testMarker$i',
+                            position: searchResult[i]['NLatLng'],
+                          );
+                          controller.addOverlay(marker);
                         }
                       },
                     ),
