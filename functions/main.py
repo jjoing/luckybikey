@@ -12,7 +12,6 @@ from geopy.distance import distance
 import heapq
 
 AStarReturn = TypedDict("AStarReturn", {"route": List[Dict[str, float]], "full_distance": float})
-# RequestRouteReturn = TypedDict("RequestRouteReturn", {"full_distance": float})
 RequestRouteReturn = TypedDict("RequestRouteReturn", {"route": List[Dict[str, float]], "full_distance": float})
 
 
@@ -223,11 +222,3 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
             code=https_fn.FunctionsErrorCode.INTERNAL,
             message=(e.args[0]),
         )
-
-
-@https_fn.on_call()
-def testting(req: https_fn.CallableRequest) -> dict:
-    return {
-        "message": "Hello, world!",
-        "data": [1, 2, 3],
-    }
