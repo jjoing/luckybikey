@@ -121,10 +121,10 @@ def get_nearest_node(collection_ref: CollectionReference, lat: float, lon: float
     # 선형 검색으로 가장 가까운 노드 탐색. TODO 더 가까운 알고리즘 있으면 대체할 것
     # 기준 좌표 부근에서 후보 노드들 query
     query_start = (
-        collection_ref.where(filter=FieldFilter("lat", ">=", lat - 0.05))
-        .where(filter=FieldFilter("lat", "<=", lat + 0.05))
-        .where(filter=FieldFilter("lon", "<=", lon + 0.05))
-        .where(filter=FieldFilter("lon", ">=", lon - 0.05))
+        collection_ref.where(filter=FieldFilter("lat", ">=", lat - 0.002))
+        .where(filter=FieldFilter("lat", "<=", lat + 0.002))
+        .where(filter=FieldFilter("lon", "<=", lon + 0.002))
+        .where(filter=FieldFilter("lon", ">=", lon - 0.002))
     )
     docs = [doc for doc in query_start.stream()]
 
