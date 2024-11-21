@@ -33,9 +33,9 @@ class Node:
         self.lat = geometry["lat"]
         self.lon = geometry["lon"]
         self.connections = connections
-        self.g = 0
+        self.g: float = 0
         self.h: float = 90000
-        self.f = 0
+        self.f: float = 0
         self.parent = parent
 
     def __lt__(self, other):
@@ -71,7 +71,9 @@ def heuristic_preference_distance(cur_node: Node, end_node: Node, group_road_typ
     return pref_dist
 
 
-def astar_road_finder(start_node: Node, end_node: Node, use_sharing=False, user_taste=False, user_group=0, group_preference=[1, 1, 1, 1, 1, 1, 1, 1]) -> AStarReturn:
+def astar_road_finder(
+    collection_ref: CollectionReference, start_node: Node, end_node: Node, use_sharing=False, user_taste=False, user_group=0, group_preference=[1, 1, 1, 1, 1, 1, 1, 1]
+) -> AStarReturn:
     # A* 알고리즘을 사용하여 시작 노드에서 도착 노드까지의 최단 경로 찾기
     open_list: List[Node] = []
     closed_set = set()
@@ -80,9 +82,9 @@ def astar_road_finder(start_node: Node, end_node: Node, use_sharing=False, user_
 
     while open_list != []:
         cur_node = heapq.heappop(open_list)
-        closed_set.add(cur_node)
+        closed_set.add(cur_node.id)
 
-        if cur_node == end_node:
+        if cur_node.id == end_node.id:
             final_road = []
             total_distance = cur_node.g
             while cur_node is not None:
@@ -90,11 +92,12 @@ def astar_road_finder(start_node: Node, end_node: Node, use_sharing=False, user_
                 cur_node = cur_node.parent
             return {"route": final_road[::-1], "full_distance": total_distance}
 
-        for inner_dict in cur_node.connections.values():
-            new_node = inner_dict["node"]
-            if new_node in closed_set:
+        for id, inner_dict in cur_node.connections.items():
+            new_node = create_node(collection_ref, id)
+            if new_node.id in closed_set:
                 continue
-            if new_node in open_list:
+            if new_node.id in [nd.id for nd in open_list]:
+                new_node = [nd for nd in open_list if nd.id == new_node.id][0]
                 if (cur_node.g + inner_dict["distance"]) >= new_node.g:
                     continue
             new_node.g = cur_node.g + inner_dict["distance"]
@@ -104,7 +107,8 @@ def astar_road_finder(start_node: Node, end_node: Node, use_sharing=False, user_
                 new_node.h = heuristic_Manhattan_distance(new_node, end_node)
             new_node.f = new_node.g + new_node.h
             new_node.parent = cur_node
-            heapq.heappush(open_list, new_node)
+            if new_node.id not in [nd.id for nd in open_list]:
+                heapq.heappush(open_list, new_node)
 
     # 길이 연결되지 않았으면
     raise https_fn.HttpsError(
@@ -153,6 +157,13 @@ def create_node_map(collection_ref: CollectionReference) -> dict[int, Node]:
     return node_map
 
 
+def create_node(collection_ref: CollectionReference, id: int) -> Node:
+    # Firestore에서 노드 생성
+    doc = collection_ref.document(str(id)).get()
+    node = Node(id, doc.to_dict(), doc.to_dict()["connections"])
+    return node
+
+
 @https_fn.on_call()
 def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
@@ -199,7 +210,6 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
 
     try:  # 노드 맵 생성
         collection_ref = firestore_client.collection("map_data_v2")
-        node_map = create_node_map(collection_ref)
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -208,7 +218,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
 
     try:  # 시작점에서 가장 가까운 노드 찾기
         nearest_start_node_id, start_dist = get_nearest_node(collection_ref, start_lat, start_lon)
-        nearest_start_node = node_map[nearest_start_node_id]
+        nearest_start_node = create_node(collection_ref, nearest_start_node_id)
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -217,7 +227,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
 
     try:  # 도착점에서 가장 가까운 노드 찾기
         nearest_end_node_id, end_dist = get_nearest_node(collection_ref, end_lat, end_lon)
-        nearest_end_node = node_map[nearest_end_node_id]
+        nearest_end_node = create_node(collection_ref, nearest_end_node_id)
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
