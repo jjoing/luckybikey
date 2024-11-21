@@ -10,6 +10,7 @@ from google.cloud.firestore import CollectionReference
 from typing import Dict, List, TypedDict
 from geopy.distance import distance
 import heapq
+import numpy as np
 
 AStarReturn = TypedDict("AStarReturn", {"route": List[Dict[str, float]], "full_distance": float})
 RequestRouteReturn = TypedDict("RequestRouteReturn", {"route": List[Dict[str, float]], "full_distance": float})
@@ -48,16 +49,38 @@ def heuristic_Manhattan_distance(cur_node: Node, end_node: Node) -> float:
     return manhattan_dist
 
 
-def astar_road_finder(start_node: Node, end_node: Node, use_sharing=False, user_taste=False) -> AStarReturn:
+def heuristic_preference_distance(cur_node: Node, end_node: Node, group_road_type, group_preference) -> float:
+    manhattan_dist = heuristic_Manhattan_distance(cur_node, end_node)
+    # next node의 해당 group의 preference 추가
+    # print(group_road_type)
+
+    feature_num = len(group_preference)  # feature_num을 고정 값인 preference를 다 더한 값을 사용하면 어떻게 될까.. 음수가 될 수도 있긴한데 음수를 0으로 빼버리면?
+    pref_sum = abs(sum(group_preference))
+    lt = np.array(group_road_type)
+    gp = np.array(group_preference)
+    road_preference = np.dot(lt, gp)
+
+    if all(abs(x) < 0.3 for x in group_preference):  # group의 preference이기 때문에 이미 0.3보다 작은 애들은 preference를 끄고 진행한다고 생각하고 코드 짜기
+        pref_sum = feature_num
+
+    # feature 개수로 나눈 대로 scaling
+    pref_dist = manhattan_dist - (manhattan_dist / pref_sum) * road_preference
+    if pref_dist < 0:
+        pref_dist = 0  # 휴리스틱이 항상 0 이상이도록
+
+    return pref_dist
+
+
+def astar_road_finder(start_node: Node, end_node: Node, use_sharing=False, user_taste=False, user_group=0, group_preference=[1, 1, 1, 1, 1, 1, 1, 1]) -> AStarReturn:
     # A* 알고리즘을 사용하여 시작 노드에서 도착 노드까지의 최단 경로 찾기
     open_list: List[Node] = []
-    closed_set = []
+    closed_set = set()
     start_node.h = heuristic_Manhattan_distance(start_node, end_node)
     heapq.heappush(open_list, start_node)
 
     while open_list != []:
         cur_node = heapq.heappop(open_list)
-        closed_set.append(cur_node)
+        closed_set.add(cur_node)
 
         if cur_node == end_node:
             final_road = []
@@ -75,7 +98,10 @@ def astar_road_finder(start_node: Node, end_node: Node, use_sharing=False, user_
                 if (cur_node.g + inner_dict["distance"]) >= new_node.g:
                     continue
             new_node.g = cur_node.g + inner_dict["distance"]
-            new_node.h = heuristic_Manhattan_distance(new_node, end_node)
+            if user_taste:
+                new_node.h = heuristic_preference_distance(new_node, end_node, [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0])
+            else:
+                new_node.h = heuristic_Manhattan_distance(new_node, end_node)
             new_node.f = new_node.g + new_node.h
             new_node.parent = cur_node
             heapq.heappush(open_list, new_node)
@@ -130,10 +156,6 @@ def create_node_map(collection_ref: CollectionReference) -> dict[int, Node]:
 @https_fn.on_call()
 def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
-        # start_lat = req.data["StartPointLat"]
-        # start_lon = req.data["StartPointLon"]
-        # end_lat = req.data["EndPointLat"]
-        # end_lon = req.data["EndPointLon"]
         start_point = req.data["StartPoint"]
         end_point = req.data["EndPoint"]
         use_sharing = req.data["UseSharing"]
@@ -176,7 +198,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 노드 맵 생성
-        collection_ref = firestore_client.collection("map_data")
+        collection_ref = firestore_client.collection("map_data_v2")
         node_map = create_node_map(collection_ref)
     except Exception as e:
         raise https_fn.HttpsError(
