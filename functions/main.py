@@ -198,7 +198,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 노드 맵 생성
-        collection_ref = firestore_client.collection("map_data_v2")
+        collection_ref = firestore_client.collection("map_data")
         node_map = create_node_map(collection_ref)
     except Exception as e:
         raise https_fn.HttpsError(
