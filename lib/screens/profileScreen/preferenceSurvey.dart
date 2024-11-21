@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'preference_provider.dart';
+import 'package:luckybiky/screens/searchScreen/search.dart';
 
 class preferenceSurvey extends StatefulWidget {
   @override
@@ -40,6 +43,8 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
       "options": ["신호가 싫어 다른 경로를 찾는다", "신호가 있어도 괜찮아 그대로 간다"]
     },
   ];
+
+  final ScreenshotController screenshotController = ScreenshotController();
 
   int currentQuestionIndex = 0;
 
@@ -194,7 +199,23 @@ class SurveyResultPage extends StatelessWidget {
                       children: [
                         IconButton(
                           icon: Icon(Icons.download, color: Colors.blue),
-                          onPressed: () => _saveImage(context),
+                          onPressed: () async {
+                            await screenshotController
+                                .capture(
+                                  delay: Duration(milliseconds: 10),
+                                  pixelRatio: MediaQuery.of(context).devicePixelRatio)
+                                .then((Uint8List? image) async {
+                                  if (image != null) {
+                                    final directory = 
+                                      await getApplicationDocumentsDirectory();
+                                    final imagePath =
+                                      await File('${directory.path}/image.png').create();
+                                    await imagePath.writeAsBytes(image);
+                                    await ImageGallerySaver.saveFile(imagePath.path, name: 'screenshot' );
+                                }
+                              }
+                            );
+                          },
                           tooltip: '다운로드',
                         ),
                         IconButton(
@@ -210,10 +231,16 @@ class SurveyResultPage extends StatelessWidget {
               const SizedBox(height: 30),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.lightGreen,
                   padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
                 ),
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Search(),
+                    ),
+                  );
                 },
                 child: const Text(
                   '경로 검색하러 가기',
