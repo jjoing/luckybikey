@@ -11,7 +11,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   int _selectedIndex = 0; // 현재 선택된 탭 인덱스
-  final List<Widget> _pages = [HomeContent(), Search(), Profile()]; // 페이지 리스트
+  final List<Widget> _pages = [const HomeContent(), const Search(), Profile()]; // 페이지 리스트
 
   void _onItemTapped(int index) {
     setState(() {

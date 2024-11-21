@@ -51,7 +51,7 @@ class _registerState extends State<register> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
+                  const Text(
                     'Register',
                     style: TextStyle(
                         color: Colors.lightGreen,
@@ -59,7 +59,7 @@ class _registerState extends State<register> {
                         fontSize: 40
                     ),
                   ),
-                  SizedBox(height: 50,),
+                  const SizedBox(height: 50,),
                   SizedBox(
                     width: 278.0,
                     child: Form(
@@ -70,7 +70,7 @@ class _registerState extends State<register> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Full Name',),
+                              const Text('Full Name',),
                               const SizedBox(height: 5.0,),
                               Column(
                                 children: [
@@ -141,7 +141,7 @@ class _registerState extends State<register> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Email',),
+                              const Text('Email',),
                               const SizedBox(height: 5.0,),
                               Column(
                                 children: [
@@ -211,7 +211,7 @@ class _registerState extends State<register> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Password',),
+                              const Text('Password',),
                               const SizedBox(height: 5.0,),
                               Column(
                                 children: [
@@ -281,7 +281,7 @@ class _registerState extends State<register> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 20,),
+                  const SizedBox(height: 20,),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black,
@@ -303,20 +303,20 @@ class _registerState extends State<register> {
                         );
 
                         if (newUser.user != null) {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => Home()));
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const Home()));
                         }
                       } catch (err) {
                         debugPrint(err.toString());
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Please check your email and password.'),
+                          const SnackBar(
+                            content: Text('Please check your email and password.'),
                             backgroundColor: Colors.blue,
                           ),
                         );
                       }
                     },
-                    child: Text('Get Registered',),
+                    child: const Text('Get Registered',),
                   ),
                 ],
               ),
