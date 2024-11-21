@@ -8,6 +8,8 @@ import 'register.dart';
 import 'utils/kakao_login.dart';
 import 'utils/social_login.dart';
 
+
+
 class login extends StatefulWidget {
   const login({super.key});
 
@@ -198,80 +200,75 @@ class _loginState extends State<login> {
                     height: MediaQuery.of(context).viewInsets.bottom,
                   ),
                   // button linked to register page
-                  Positioned(
-                    bottom: 13,
-                    left: 18.9,
-                    child: TextButton(
-                      style: ButtonStyle(
-                        padding: WidgetStateProperty.all(
-                          EdgeInsets.zero,
-                        ),
+                  TextButton(
+                    style: ButtonStyle(
+                      padding: WidgetStateProperty.all(
+                        EdgeInsets.zero,
                       ),
-                      child: const Text(
-                        'New Here? Register',
-                      ),
-                      onPressed: () {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => const register()));
-                      },
                     ),
+                    child: const Text(
+                      'New Here? Register',
+                    ),
+                    onPressed: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => const register()));
+                    },
                   ),
+                  SizedBox(height: 20,),
                   // login button
-                  Positioned(
-                    bottom: 19.13,
-                    right: 27.26,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black,
-                        backgroundColor: Colors.transparent,
-                        side: const BorderSide(
-                          color: Colors.white,
-                        ),
-                        fixedSize: const Size(129.6, 54.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6.3),
-                        ),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.lightGreen,
+                      side: const BorderSide(
+                        color: Colors.white,
                       ),
-                      onPressed: () async {
-                        try {
-                          _tryValidation();
-
-                          final newUser =
-                              await _authentication.signInWithEmailAndPassword(
-                            email: userEmail,
-                            password: userPassword,
-                          );
-
-                          if (newUser.user != null) {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const Home()));
-                          }
-                        } catch (err) {
-                          print(err);
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'Please check your email and password.'),
-                              backgroundColor: Colors.blue,
-                            ),
-                          );
-                        }
-                      },
-                      child: const Text(
-                        'Login',
+                      fixedSize: Size(MediaQuery.of(context).size.width*0.45, 48.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6.3),
                       ),
                     ),
+                    onPressed: () async {
+                      try {
+                        _tryValidation();
+
+                        final newUser =
+                            await _authentication.signInWithEmailAndPassword(
+                          email: userEmail,
+                          password: userPassword,
+                        );
+
+                        if (newUser.user != null) {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const Home()));
+                        }
+                      } catch (err) {
+                        print(err);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Please check your email and password.'),
+                            backgroundColor: Colors.blue,
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text(
+                      'Login',
+                    ),
                   ),
+                  SizedBox(height: 10,),
                   Column(
                     children: [
                       Container(
-                        width: MediaQuery.of(context).size.width*0.3,
+                        width: MediaQuery.of(context).size.width*0.5,
                         child: IconButton(
                           onPressed: () async {
                             await viewModel.login();
+                            KakaoLogin();
                             setState(() {});
 
                           },

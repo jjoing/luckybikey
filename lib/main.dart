@@ -21,9 +21,11 @@ import 'login.dart';
 void main() async {
   await _initialize();
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   KakaoSdk.init(
     nativeAppKey: kakao_native_key,
     javaScriptAppKey: kakao_java_key,
