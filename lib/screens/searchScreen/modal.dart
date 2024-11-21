@@ -16,7 +16,7 @@ class _ModalContentState extends State<ModalContent> {
         onPressed: () {
           showModalBottomSheet<void>(
             context: context,
-            shape: RoundedRectangleBorder(
+            shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(50),
                 topRight: Radius.circular(50),
@@ -32,7 +32,7 @@ class _ModalContentState extends State<ModalContent> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       const Text('@@님은 현재 ##km 주행 중!'),
-                      SizedBox(height: 20,),
+                      const SizedBox(height: 20,),
                       ElevatedButton(
                         child: const Text('지도 보기'),
                         onPressed: () => Navigator.pop(context),
@@ -45,6 +45,6 @@ class _ModalContentState extends State<ModalContent> {
           );
         },
       ),
-    );;
+    );
   }
 }

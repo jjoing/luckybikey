@@ -108,7 +108,7 @@ class Profile extends StatelessWidget {
                               },
                             ),
                           ),
-                        );// 명시적으로 'return' 추가
+                        );
                       },
                       child: const Text(
                         '다시 설문조사 참여하기',
