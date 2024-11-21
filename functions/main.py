@@ -235,7 +235,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 시작노드-도착노드 길찾기
-        result = astar_road_finder(start_node=nearest_start_node, end_node=nearest_end_node)
+        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node)
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
