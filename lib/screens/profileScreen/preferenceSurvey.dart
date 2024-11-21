@@ -49,11 +49,16 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
   int currentQuestionIndex = 0;
 
   void _selectOption(String type, String keyword, bool isLiked) {
-    final preferenceProvider = Provider.of<PreferenceProvider>(context, listen: false);
+    final preferenceProvider =
+        Provider.of<PreferenceProvider>(context, listen: false);
     if (type == "like") {
-      isLiked ? preferenceProvider.addLike(keyword) : preferenceProvider.removeLike(keyword);
+      isLiked
+          ? preferenceProvider.addLike(keyword)
+          : preferenceProvider.removeLike(keyword);
     } else {
-      isLiked ? preferenceProvider.addDislike(keyword) : preferenceProvider.removeDislike(keyword);
+      isLiked
+          ? preferenceProvider.addDislike(keyword)
+          : preferenceProvider.removeDislike(keyword);
     }
   }
 
@@ -86,7 +91,10 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
                 children: [
                   Text(
                     questionData["question"],
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.lightGreen[900]),
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.lightGreen[900]),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
@@ -97,7 +105,8 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.lightGreen,
-                            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 50, vertical: 15),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -112,7 +121,10 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
                           },
                           child: Text(
                             questionData["options"][index],
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
                           ),
                         ),
                       );
@@ -157,77 +169,93 @@ class SurveyResultPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      body: Screenshot(
-        controller: screenshotController,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 3,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      '이런 주행 취향이 있어요!',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 20),
-                    Wrap(
-                      spacing: 10,
-                      children: preferenceProvider.likes.map((like) => Chip(label: Text(like))).toList(),
-                    ),
-                    Wrap(
-                      spacing: 10,
-                      children: preferenceProvider.dislikes.map((dislike) => Chip(label: Text(dislike))).toList(),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.download, color: Colors.blue),
-                          onPressed: () async {
-                            await screenshotController
-                                .capture(
-                                  delay: Duration(milliseconds: 10),
-                                  pixelRatio: MediaQuery.of(context).devicePixelRatio)
-                                .then((Uint8List? image) async {
-                                  if (image != null) {
-                                    final directory = 
-                                      await getApplicationDocumentsDirectory();
-                                    final imagePath =
-                                      await File('${directory.path}/image.png').create();
-                                    await imagePath.writeAsBytes(image);
-                                    await ImageGallerySaver.saveFile(imagePath.path, name: 'screenshot' );
-                                }
-                              }
-                            );
-                          },
-                          tooltip: '다운로드',
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.share, color: Colors.blue),
-                          onPressed: () => _shareImage(context),
-                          tooltip: '공유',
+      body: Column(
+        children: [
+          Screenshot(
+            controller: screenshotController,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          spreadRadius: 3,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '이런 주행 취향이 있어요!',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 20),
+                        Wrap(
+                          spacing: 10,
+                          children: preferenceProvider.likes
+                              .map((like) => Chip(label: Text(like)))
+                              .toList(),
+                        ),
+                        Wrap(
+                          spacing: 10,
+                          children: preferenceProvider.dislikes
+                              .map((dislike) => Chip(label: Text(dislike)))
+                              .toList(),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.download, color: Colors.blue),
+                              onPressed: () async {
+                                await screenshotController
+                                    .capture(
+                                        delay: Duration(milliseconds: 10),
+                                        pixelRatio: MediaQuery.of(context)
+                                            .devicePixelRatio)
+                                    .then((Uint8List? image) async {
+                                  if (image != null) {
+                                    final directory =
+                                        await getApplicationDocumentsDirectory();
+                                    final imagePath = await File(
+                                            '${directory.path}/image.png')
+                                        .create();
+                                    await imagePath.writeAsBytes(image);
+                                    await ImageGallerySaver.saveFile(
+                                        imagePath.path,
+                                        name: 'screenshot');
+                                  }
+                                });
+                              },
+                              tooltip: '다운로드',
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.share, color: Colors.blue),
+                              onPressed: () => _shareImage(context),
+                              tooltip: '공유',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+            ),
+          ),
+          Column(
+            children: [
               const SizedBox(height: 30),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -249,7 +277,7 @@ class SurveyResultPage extends StatelessWidget {
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
