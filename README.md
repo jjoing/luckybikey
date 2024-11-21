@@ -37,6 +37,8 @@ Our problem statement is that when we use bicycles as transportation, the user i
 - [flutter_tts](https://pub.dev/packages/flutter_tts)
 - [shared_preferences](https://pub.dev/packages/shared_preferences)
 - [permission_handler](https://pub.dev/packages/permission_handler)
+- [kakao_flutter_sdk](https://pub.dev/packages/kakado_flutter_sdk)
+
 
 
 ## 🛳 User Guide
