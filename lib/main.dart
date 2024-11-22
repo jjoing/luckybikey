@@ -11,12 +11,12 @@ import 'package:provider/provider.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
 import 'utils/mapAPI.dart';
-import 'utils/page_provider.dart';
-import 'utils/preference_provider.dart';
+import 'utils/providers/page_provider.dart';
+import 'utils/providers/preference_provider.dart';
 import 'screens/home.dart';
 import 'screens/searchScreen/search.dart';
 import 'screens/profileScreen/profile.dart';
-import 'login.dart';
+import 'utils/login/login.dart';
 
 
 void main() async {

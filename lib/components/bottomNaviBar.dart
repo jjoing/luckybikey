@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'package:provider/provider.dart';
 
-import 'package:luckybiky/utils/page_provider.dart';
+import '../../utils/providers/page_provider.dart';
 
 class BottomNavigation extends StatelessWidget {
   @override

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:kakao_flutter_sdk_auth/kakao_flutter_sdk_auth.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 
-import 'screens/home.dart';
+import '../../screens/home.dart';
 import 'register.dart';
-import 'utils/kakao_login.dart';
-import 'utils/social_login.dart';
+import 'kakao_login.dart';
+import 'social_login.dart';
 
 
 

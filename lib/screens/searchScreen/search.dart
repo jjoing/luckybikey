@@ -1,19 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:convert/convert.dart';
+
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
-import 'package:luckybiky/screens/searchScreen/modal.dart';
-import 'package:luckybiky/contents/way_sample_data.dart';
-import 'package:luckybiky/utils/mapAPI.dart';
-import 'package:luckybiky/components/bottomNaviBar.dart';
+import '../../screens/searchScreen/modal.dart';
+import '../../contents/way_sample_data.dart';
+import '../../utils/mapAPI.dart';
+import '../../components/bottomNaviBar.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
