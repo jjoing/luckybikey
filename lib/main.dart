@@ -11,10 +11,11 @@ import 'package:provider/provider.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
 import 'utils/mapAPI.dart';
+import 'utils/page_provider.dart';
+import 'utils/preference_provider.dart';
 import 'screens/home.dart';
 import 'screens/searchScreen/search.dart';
 import 'screens/profileScreen/profile.dart';
-import 'screens/profileScreen/preference_provider.dart';
 import 'login.dart';
 
 
@@ -32,10 +33,13 @@ void main() async {
   );
 
   runApp(
-      ChangeNotifierProvider(
-        create: (context) => PreferenceProvider(),
-        child: const SplashScreen(),
-      ),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PageProvider()),
+        ChangeNotifierProvider(create: (_) => PreferenceProvider()),
+      ],
+      child: SplashScreen(),
+    ),
   );
 }
 

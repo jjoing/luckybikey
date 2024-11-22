@@ -3,13 +3,17 @@ import 'package:luckybiky/screens/home.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'preference_provider.dart';
+import '../../utils/preference_provider.dart';
 import 'preferenceSurvey.dart';
+import '../../components/bottomNaviBar.dart';
+import '../../utils/page_provider.dart';
+
 
 class Profile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final preferenceProvider = Provider.of<PreferenceProvider>(context);
+    final pageProvider = Provider.of<PageProvider>(context, listen: false);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -126,6 +130,7 @@ class Profile extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigation(),
     );
   }
 

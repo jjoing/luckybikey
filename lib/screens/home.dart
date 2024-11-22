@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'searchScreen/search.dart';
 import 'profileScreen/profile.dart';
 import 'profileScreen/preferenceSurvey.dart';
+import 'package:luckybiky/utils/page_provider.dart';
+import '../../components/bottomNaviBar.dart';
+
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -15,7 +18,11 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   int _selectedIndex = 0; // 현재 선택된 탭 인덱스
-  final List<Widget> _pages = [const HomeContent(), const Search(), Profile()]; // 페이지 리스트
+  final List<Widget> _pages = [
+    HomeContent(),
+    Search(),
+    Profile(),
+  ]; // 페이지 리스트
 
   // 첫 접속 여부를 확인하는 함수
   Future<bool> checkFirstTimeUser() async {
@@ -67,20 +74,12 @@ class _HomeState extends State<Home> {
             backgroundColor: Colors.white,
             elevation: 0.0,
           ),
-          body: _pages[_selectedIndex], // 현재 선택된 페이지를 표시
-          bottomNavigationBar: BottomNavigationBar(
-            selectedItemColor: Colors.lightGreen,
-            unselectedItemColor: Colors.lightGreenAccent,
-            showSelectedLabels: false,
-            showUnselectedLabels: false,
-            onTap: _onItemTapped,
-            currentIndex: _selectedIndex,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-              BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-              BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Profile'),
-            ],
-          ),
+          body: Consumer<PageProvider>(
+            builder: (context, pageProvider, _) {
+              return _pages[pageProvider.currentPage];
+            },
+          ), // 현재 선택된 페이지를 표시
+          //bottomNavigationBar: BottomNavigation(),
         );
       },
     );
@@ -160,12 +159,14 @@ class IntroToSurveyPage extends StatelessWidget {
 }
 
 
-// 기존 Home의 컨텐츠를 분리한 위젯 (HomeContent)
+// 기존 Home의 컨텐츠를 분리한 위젯
 class HomeContent extends StatelessWidget {
   const HomeContent({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final pageProvider = Provider.of<PageProvider>(context, listen: false);
+
     return Column(
       children: [
         Expanded(
@@ -204,8 +205,7 @@ class HomeContent extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   ),
                   onPressed: () {
-                    final parentState = context.findAncestorStateOfType<_HomeState>();
-                    parentState?._onItemTapped(1); // Search 페이지로 이동
+                    pageProvider.setPage(1); // search 페이지로 이동
                   },
                   child: const Text(
                     "Go to Search",
@@ -256,8 +256,7 @@ class HomeContent extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   ),
                   onPressed: () {
-                    final parentState = context.findAncestorStateOfType<_HomeState>();
-                    parentState?._onItemTapped(2); // Profile 페이지로 이동
+                    pageProvider.setPage(2); // profile 페이지로 이동
                   },
                   child: const Text(
                     "Go to Profile",
