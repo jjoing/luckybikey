@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
+import 'package:provider/provider.dart';
 
 import '../../screens/home.dart';
+
 import 'register.dart';
 import 'kakao_login.dart';
 import 'social_login.dart';
 
+import '../providers/kakao_login_provider.dart';
 
 
 class login extends StatefulWidget {
@@ -25,7 +30,6 @@ class _loginState extends State<login> {
   String userPassword = '';
 
   late ScrollController scrollController;
-
   void _tryValidation() {
     final isValid = _formKey.currentState!.validate();
     if (isValid) {
@@ -41,6 +45,8 @@ class _loginState extends State<login> {
 
   @override
   Widget build(BuildContext context) {
+    final kakaoLoginProvider = Provider.of<KakaoLoginProvider>(context);
+
     return Scaffold(
         resizeToAvoidBottomInset: false,
         body: SafeArea(
@@ -265,16 +271,20 @@ class _loginState extends State<login> {
                         width: MediaQuery.of(context).size.width*0.5,
                         child: IconButton(
                           onPressed: () async {
-                            await viewModel.login();
-                            KakaoLogin();
-                            setState(() {});
-
+                            await kakaoLoginProvider.login();
+                            if (kakaoLoginProvider.isLogined) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const Home()),
+                              );
+                            }
                           },
                           icon: Image.asset('assets/images/kakao_login.png',),
                         ),
                       ),
                       TextButton(
                         onPressed: () async{
+                          getUserInfo();
                           print('\n닉네임: ${viewModel.user?.kakaoAccount?.profile?.nickname}');
                         },
                         child: Text('계정 정보 확인'),

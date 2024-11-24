@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
 import '../../utils/providers/page_provider.dart';
 import '../../utils/providers/preference_provider.dart';
+import '../../utils/providers/kakao_login_provider.dart';
+
 import 'preference_survey/intro.dart';
 import '../../components/bottomNaviBar.dart';
+
+import '../../utils/login/login.dart';
+import '../../utils/login/social_login.dart';
+import '../../utils/login/kakao_login.dart';
 
 
 class Profile extends StatelessWidget {
@@ -14,33 +21,50 @@ class Profile extends StatelessWidget {
   Widget build(BuildContext context) {
     final preferenceProvider = Provider.of<PreferenceProvider>(context);
     final pageProvider = Provider.of<PageProvider>(context, listen: false);
+    final kakaoLoginProvider = Provider.of<KakaoLoginProvider>(context);
+
+    final viewModel = MainViewModel(KakaoLogin());
 
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             const SizedBox(height: 40),
-            // 프로필 이미지와 닉네임
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: AssetImage('assets/images/profile_image.jpg'),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'yoonbin',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.lightGreen[800],
+            // 프로필 이미지
+            if (kakaoLoginProvider.user?.kakaoAccount?.profile?.profileImageUrl != null)
+              CircleAvatar(
+                radius: 50,
+                backgroundImage: NetworkImage(
+                  kakaoLoginProvider.user?.kakaoAccount?.profile?.profileImageUrl ?? '',
+                ),
+              ),
+            const SizedBox(height: 20),
+            // 닉네임
+            Center(
+              child: Text(
+                kakaoLoginProvider.user?.kakaoAccount?.profile?.nickname ?? '로그인이 필요합니다.',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.lightGreen[800],
+                ),
               ),
             ),
+            const SizedBox(height: 20),
+            // 로그인/로그아웃 버튼
             TextButton(
-              onPressed: () {
-                // 로그아웃 로직 추가
+              onPressed: () async {
+                if (kakaoLoginProvider.isLogined) {
+                  // 로그아웃 실행
+                  await kakaoLoginProvider.logout();
+                } else {
+                  // 로그인 실행
+                  await kakaoLoginProvider.login();
+                }
               },
-              child: const Text(
-                '로그아웃',
-                style: TextStyle(color: Colors.redAccent, fontSize: 14),
+              child: Text(
+                kakaoLoginProvider.isLogined ? '로그아웃' : '로그인',
+                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
               ),
             ),
             const SizedBox(height: 20),
