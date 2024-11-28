@@ -161,8 +161,15 @@ class _SearchState extends State<Search> {
                                 searchSuggestions.length,
                                 (index) {
                                   return ListTile(
-                                    title:
-                                        Text(searchSuggestions[index]['title']),
+                                    title: Text(
+                                        searchSuggestions[index]['title'],
+                                        style: const TextStyle(
+                                            color: Colors.black, fontSize: 16)),
+                                    subtitle: Text(
+                                      searchSuggestions[index]['address'],
+                                      style: const TextStyle(
+                                          color: Colors.grey, fontSize: 12),
+                                    ),
                                     onTap: () {
                                       setState(() {
                                         _mapKey = UniqueKey();
@@ -216,8 +223,15 @@ class _SearchState extends State<Search> {
                                 searchSuggestions.length,
                                 (index) {
                                   return ListTile(
-                                    title:
-                                        Text(searchSuggestions[index]['title']),
+                                    title: Text(
+                                        searchSuggestions[index]['title'],
+                                        style: const TextStyle(
+                                            color: Colors.black, fontSize: 16)),
+                                    subtitle: Text(
+                                      searchSuggestions[index]['address'],
+                                      style: const TextStyle(
+                                          color: Colors.grey, fontSize: 12),
+                                    ),
                                     onTap: () {
                                       setState(() {
                                         _mapKey = UniqueKey();
