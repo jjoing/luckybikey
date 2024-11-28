@@ -84,6 +84,10 @@ flutter:
     - assets/way_coordinates_data.json
     - assets/public_bike_locations.csv
     - assets/images/kakao_login.png
+    - assets/images/survey_result/fast.webp
+    - assets/images/survey_result/health.webp
+    - assets/images/survey_result/safety.webp
+    - assets/images/survey_result/scenery.webp
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
