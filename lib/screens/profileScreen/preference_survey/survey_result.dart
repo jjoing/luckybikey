@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
+import 'kakao_share.dart';
+
 import '../../../utils/providers/page_provider.dart';
 import '../../../utils/providers/preference_provider.dart';
 
@@ -118,7 +120,7 @@ class SurveyResultPage extends StatelessWidget {
                             ),
                             IconButton(
                               icon: Icon(Icons.share, color: Colors.blue),
-                              onPressed: () => _shareImage(context),
+                              onPressed: () => kakaoShare(),
                               tooltip: '공유',
                             ),
                           ],

@@ -13,10 +13,13 @@ import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'utils/mapAPI.dart';
 import 'utils/providers/page_provider.dart';
 import 'utils/providers/preference_provider.dart';
+import 'utils/providers/kakao_login_provider.dart';
+
 import 'screens/home.dart';
 import 'screens/searchScreen/search.dart';
 import 'screens/profileScreen/profile.dart';
 import 'utils/login/login.dart';
+import 'utils/login/kakao_login.dart';
 
 
 void main() async {
@@ -37,6 +40,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => PageProvider()),
         ChangeNotifierProvider(create: (_) => PreferenceProvider()),
+        ChangeNotifierProvider(create: (_) => KakaoLoginProvider()),
       ],
       child: SplashScreen(),
     ),
