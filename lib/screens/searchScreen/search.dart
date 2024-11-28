@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -14,6 +15,7 @@ import '../../screens/searchScreen/modal.dart';
 import '../../contents/way_sample_data.dart';
 import '../../utils/mapAPI.dart';
 import '../../components/bottomNaviBar.dart';
+import '../../screens/searchScreen/navigation.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -28,11 +30,61 @@ Future<Map<String, dynamic>> _request_route(req) async {
   final results =
       await FirebaseFunctions.instance.httpsCallable('request_route').call(req);
 
-  List<NLatLng> route = List<NLatLng>.from(results.data['route'].map((point) {
-    return NLatLng(point['lat'], point['lon']);
+  List<Map<String, dynamic>> route =
+      List<Map<String, dynamic>>.from(results.data['route'].map((point) {
+    return {
+      "NLatLng": NLatLng(point['lat'], point['lon']),
+      "distance": point['distance']
+    };
   }));
 
-  return {"route": route, "full_distance": results.data['full_distance']};
+  List<Map<String, dynamic>> route_info = [];
+
+  for (var i = 0; i < route.length - 2; i++) {
+    final Map<String, dynamic> current_node = route[i];
+    final Map<String, dynamic> next_node = route[i + 1];
+    final Map<String, dynamic> next_next_node = route[i + 2];
+
+    final link1 = [
+      next_node["NLatLng"].longitude - current_node["NLatLng"].longitude,
+      next_node["NLatLng"].latitude - current_node["NLatLng"].latitude,
+      0.0,
+    ];
+    final link1_norm = sqrt(pow(link1[0], 2) + pow(link1[1], 2));
+    final link2 = [
+      next_next_node["NLatLng"].longitude - next_node["NLatLng"].longitude,
+      next_next_node["NLatLng"].latitude - next_node["NLatLng"].latitude,
+      0.0,
+    ];
+    final link2_norm = sqrt(pow(link2[0], 2) + pow(link2[1], 2));
+    final cross_product = [
+      link1[1] * link2[2] - link1[2] * link2[1],
+      link1[2] * link2[0] - link1[0] * link2[2],
+      link1[0] * link2[1] - link1[1] * link2[0],
+    ];
+    final dot_product =
+        link1[0] * link2[0] + link1[1] * link2[1] + link1[2] * link2[2];
+    route_info.add({
+      "NLatLng": current_node["NLatLng"],
+      "distance": next_node['distance'],
+      "isleft": cross_product[2] > 0,
+      "angle": acos(dot_product / (link1_norm * link2_norm)) * 180 / pi,
+    });
+  }
+  route_info.add({
+    "NLatLng": route[route.length - 2]["NLatLng"],
+    "distance": route[route.length - 1]['distance'],
+    "isleft": null,
+    "angle": null,
+  });
+  route_info.add({
+    "NLatLng": route[route.length - 1]["NLatLng"],
+    "distance": null,
+    "isleft": null,
+    "angle": null,
+  });
+
+  return {"route": route_info, "full_distance": results.data['full_distance']};
 }
 
 Future<List<Map<String, dynamic>>> _search_request(req) async {
@@ -89,7 +141,7 @@ class _SearchState extends State<Search> {
     return NLatLng(point['lat'], point['lon']);
   }).toList();
 
-  List<NLatLng> route = [];
+  List<Map<String, dynamic>> route = [];
   List<Map<String, dynamic>> searchResult = [{}, {}];
   List<Map<String, dynamic>> searchSuggestions = [];
 
@@ -252,7 +304,45 @@ class _SearchState extends State<Search> {
                         width: 20,
                         child: IconButton(
                           padding: EdgeInsets.zero,
-                          onPressed: () => {},
+                          onPressed: () => {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return Navigation(
+                                  route: route,
+                                  start: searchResult[0],
+                                  end: searchResult[1],
+                                );
+                              },
+                            ),
+                            if (searchResult[0].isEmpty ||
+                                searchResult[1].isEmpty)
+                              {
+                                tts.speak("출발지와 도착지를 입력해주세요."),
+                              }
+                            else if (searchResult[0] == searchResult[1])
+                              {
+                                tts.speak("출발지와 도착지가 같습니다."),
+                              }
+                            else if (route.isEmpty)
+                              {
+                                tts.speak("경로를 찾는 중입니다."),
+                              }
+                            else
+                              {
+                                tts.speak("안내를 시작합니다."),
+                                // showDialog(
+                                //   context: context,
+                                //   builder: (BuildContext context) {
+                                //     return Navigation(
+                                //       route: route,
+                                //       start: searchResult[0],
+                                //       end: searchResult[1],
+                                //     );
+                                //   },
+                                // ),
+                              }
+                          },
                           icon: const Icon(Icons.swap_vert),
                         ),
                       ),
@@ -267,7 +357,6 @@ class _SearchState extends State<Search> {
                               _showPath = !_showPath; // 상태를 토글하여 경로 표시 여부 변경
                             });
                             tts.speak("경로를 찾는 중입니다.");
-                            route = [];
                             print("speak");
                             if (searchResult[0].isEmpty ||
                                 searchResult[1].isEmpty) {
@@ -291,10 +380,6 @@ class _SearchState extends State<Search> {
                                 _mapKey = UniqueKey();
                                 route = result['route'];
                               });
-                              // print(result['route']);
-                              // print(result['route'].runtimeType);
-                              // print(result['full_distance']);
-                              // print(result['full_distance'].runtimeType);
                             }, onError: (error, stackTrace) {
                               print(error);
                             });
@@ -337,7 +422,8 @@ class _SearchState extends State<Search> {
                         if (_showPath) {
                           final path2 = NPathOverlay(
                             id: 'samplePath3',
-                            coords: route, // NLatLng로 변환된 좌표 리스트
+                            coords: List<NLatLng>.from(route.map(
+                                (e) => e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
                             color: Colors.lightGreen,
                             width: 5,
                           );
