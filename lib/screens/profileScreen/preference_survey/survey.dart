@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:screenshot/screenshot.dart';
 
-import 'dart:ui';
+import 'package:provider/provider.dart';
 
 import '../../../utils/providers/preference_provider.dart';
 import 'survey_result.dart';
@@ -17,36 +15,46 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
     {
       "question": "친구와 자전거 여행을 떠날 때 당신은?",
       "type": "like",
-      "keyword": "Scenery",
+      "keyword": "풍경",
       "options": ["길가에 있는 카페에서 휴식을 즐긴다", "목적지까지 최대한 빨리 간다"]
     },
     {
       "question": "자전거 도로에서 큰 길로 이어질 때",
       "type": "like",
-      "keyword": "Bike-only roads",
+      "keyword": "안전",
       "options": ["빠르고 직선인 큰 길을 택한다", "안전한 자전거 전용 도로로 우회한다"]
+    },
+    {
+      "question": "앗! 길을 가는데 사람이 너무 많다!",
+      "type": "dislike",
+      "keyword": "통행량",
+      "options": ["할 수 없이 자전거에서 내리거나 다른 길로 돌아간다", "따르릉 따르릉 비켜나세요~ 그냥 지나간다"]
     },
     {
       "question": "평화로운 산길을 달릴 때",
       "type": "like",
-      "keyword": "Fast paths",
-      "options": ["경치를 즐기며 천천히 주행한다", "속도를 내며 도착 시간을 줄인다"]
+      "keyword": "속도",
+      "options": ["속도를 내며 도착시간을 줄인다", "경치를 즐기며 천천히 주행한다"]
     },
     {
       "question": "신호등이 많은 길을 지날 때",
       "type": "dislike",
-      "keyword": "Signals",
-      "options": ["신호가 싫어 다른 경로를 찾는다", "신호가 있어도 괜찮아 그대로 간다"]
+      "keyword": "신호",
+      "options": ["잠시도 멈추기 싫어 다른 길로 떠난다.", "신호가 있어도 괜찮아 그대로 간다"]
     },
+    {
+      "question":"주행을 하다가 오르막을 마주쳤을 때",
+      "type":"dislike",
+      "keyword":"오르막",
+      "options":["한숨을 쉬며 자전거에서 내려서 끌고 간다", "아무도 나를 막을 수 없다. 빠르게 올라간다"],
+    }
   ];
-
-  final ScreenshotController screenshotController = ScreenshotController();
 
   int currentQuestionIndex = 0;
 
   void _selectOption(String type, String keyword, bool isLiked) {
     final preferenceProvider =
-        Provider.of<PreferenceProvider>(context, listen: false);
+    Provider.of<PreferenceProvider>(context, listen: false);
     if (type == "like") {
       isLiked
           ? preferenceProvider.addLike(keyword)
@@ -64,11 +72,25 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
     });
   }
 
+  String _determineResultType(List<String> likes, List<String> dislikes) {
+    if (likes.contains("풍경") && !likes.contains("속도")) {
+      return "scenery";
+    } else if (likes.contains("속도") && dislikes.contains("신호") && !dislikes.contains("오르막")) {
+      return "health";
+    } else if (likes.contains("안전") && !dislikes.contains("신호")) {
+      return "safety";
+    } else {
+      return "fast";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (currentQuestionIndex >= surveyQuestions.length) {
       // 설문이 완료되면 결과 페이지로 이동
-      return SurveyResultPage();
+      final preferenceProvider = Provider.of<PreferenceProvider>(context, listen: false);
+      final resultType = _determineResultType(preferenceProvider.likes, preferenceProvider.dislikes);
+      return SurveyResultPage(resultType: resultType);
     }
 
     final questionData = surveyQuestions[currentQuestionIndex];
@@ -90,7 +112,7 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
                     style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.lightGreen[900]),
+                        color: Colors.lightGreen[600]),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
@@ -100,7 +122,7 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.lightGreen,
+                            backgroundColor: Colors.lightGreen[200],
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 50, vertical: 15),
                             shape: RoundedRectangleBorder(
@@ -111,16 +133,16 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
                             _selectOption(
                               questionData["type"],
                               questionData["keyword"],
-                              index == 0, // 0번 옵션은 "네", 1번 옵션은 "아니요"
+                              index == 0,
                             );
                             _nextQuestion();
                           },
                           child: Text(
                             questionData["options"][index],
                             style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white),
+                                color: Colors.black),
                           ),
                         ),
                       );
@@ -135,5 +157,3 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
     );
   }
 }
-
-

@@ -282,13 +282,6 @@ class _loginState extends State<login> {
                           icon: Image.asset('assets/images/kakao_login.png',),
                         ),
                       ),
-                      TextButton(
-                        onPressed: () async{
-                          getUserInfo();
-                          print('\n닉네임: ${viewModel.user?.kakaoAccount?.profile?.nickname}');
-                        },
-                        child: Text('계정 정보 확인'),
-                      ),
                     ],
                   ),
                 ],
