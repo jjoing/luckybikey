@@ -39,7 +39,7 @@ Future<List<Map<String, dynamic>>> _search_request(req) async {
   String query = req['query'];
   final results = await http.get(
     Uri.parse(
-        'https://openapi.naver.com/v1/search/local.json?query=$query&display=10&start=1&sort=random'),
+        'https://openapi.naver.com/v1/search/local.json?query=$query&display=100&start=1&sort=random'),
     headers: {
       "X-Naver-Client-Id": client_id,
       "X-Naver-Client-Secret": client_secret,
@@ -48,7 +48,7 @@ Future<List<Map<String, dynamic>>> _search_request(req) async {
   List<Map<String, dynamic>> result = List<Map<String, dynamic>>.from(
       jsonDecode(results.body)['items'].map((item) {
     return {
-      "title": item['title'],
+      "title": item['title'].replaceAll(RegExp(r'<[^>]*>'), ''),
       "link": item['link'],
       "category": item['category'],
       "description": item['description'],
@@ -91,6 +91,7 @@ class _SearchState extends State<Search> {
 
   List<NLatLng> route = [];
   List<Map<String, dynamic>> searchResult = [{}, {}];
+  List<Map<String, dynamic>> searchSuggestions = [];
 
   Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
   bool _showMarker = false; // 마커 표시 여부
@@ -129,34 +130,52 @@ class _SearchState extends State<Search> {
                               borderRadius: BorderRadius.circular(5),
                               color: Colors.white70,
                             ),
-                            child: TextField(
-                              controller: txt_start,
-                              onChanged: (value) {
-                                searchResult[0] = {};
-                              },
-                              textInputAction: TextInputAction.go,
-                              onSubmitted: (value) async {
-                                await _search_request({"query": value}).then(
-                                    (result) {
-                                  for (var i = 0; i < result.length; i++) {
-                                    print(result[i]);
-                                  }
-                                  txt_start.text = result[0]['title']
-                                      .replaceAll(
-                                          RegExp(r'<[^>]*>'), ''); // html 태그 제거
-                                  setState(() {
-                                    _mapKey = UniqueKey();
-                                    searchResult[0] = result[0];
+                            child: SearchAnchor(builder: (BuildContext context,
+                                SearchController controller) {
+                              return TextField(
+                                controller: controller,
+                                onChanged: (value) {
+                                  searchResult[0] = {};
+                                },
+                                textInputAction: TextInputAction.go,
+                                onSubmitted: (value) async {
+                                  await _search_request({"query": value}).then(
+                                      (result) {
+                                    setState(() {
+                                      _mapKey = UniqueKey();
+                                      searchSuggestions = result;
+                                    });
+                                    controller.openView();
+                                  }, onError: (error, stackTrace) {
+                                    print(error);
                                   });
-                                }, onError: (error, stackTrace) {
-                                  print(error);
-                                });
-                              },
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: '출발지 입력',
-                              ),
-                            ),
+                                },
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: '출발지 입력',
+                                ),
+                              );
+                            }, suggestionsBuilder: (BuildContext context,
+                                SearchController controller) {
+                              return List<ListTile>.generate(
+                                searchSuggestions.length,
+                                (index) {
+                                  return ListTile(
+                                    title:
+                                        Text(searchSuggestions[index]['title']),
+                                    onTap: () {
+                                      setState(() {
+                                        _mapKey = UniqueKey();
+                                        searchResult[0] =
+                                            searchSuggestions[index];
+                                        controller.closeView(
+                                            searchSuggestions[index]['title']);
+                                      });
+                                    },
+                                  );
+                                },
+                              );
+                            }),
                           ),
                           const SizedBox(height: 10),
                           Container(
@@ -166,29 +185,52 @@ class _SearchState extends State<Search> {
                               borderRadius: BorderRadius.circular(5),
                               color: Colors.white70,
                             ),
-                            child: TextField(
-                              controller: txt_end,
-                              onChanged: (value) {
-                                searchResult[1] = {};
-                              },
-                              textInputAction: TextInputAction.go,
-                              onSubmitted: (value) async {
-                                await _search_request({"query": value}).then(
-                                    (result) {
-                                  txt_end.text = result[0]['title'];
-                                  setState(() {
-                                    _mapKey = UniqueKey();
-                                    searchResult[1] = result[0];
+                            child: SearchAnchor(builder: (BuildContext context,
+                                SearchController controller) {
+                              return TextField(
+                                controller: controller,
+                                onChanged: (value) {
+                                  searchResult[1] = {};
+                                },
+                                textInputAction: TextInputAction.go,
+                                onSubmitted: (value) async {
+                                  await _search_request({"query": value}).then(
+                                      (result) {
+                                    setState(() {
+                                      _mapKey = UniqueKey();
+                                      searchSuggestions = result;
+                                    });
+                                    controller.openView();
+                                  }, onError: (error, stackTrace) {
+                                    print(error);
                                   });
-                                }, onError: (error, stackTrace) {
-                                  print(error);
-                                });
-                              },
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: '도착지 입력',
-                              ),
-                            ),
+                                },
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: '도착지 입력',
+                                ),
+                              );
+                            }, suggestionsBuilder: (BuildContext context,
+                                SearchController controller) {
+                              return List<ListTile>.generate(
+                                searchSuggestions.length,
+                                (index) {
+                                  return ListTile(
+                                    title:
+                                        Text(searchSuggestions[index]['title']),
+                                    onTap: () {
+                                      setState(() {
+                                        _mapKey = UniqueKey();
+                                        searchResult[1] =
+                                            searchSuggestions[index];
+                                        controller.closeView(
+                                            searchSuggestions[index]['title']);
+                                      });
+                                    },
+                                  );
+                                },
+                              );
+                            }),
                           ),
                         ],
                       ),
