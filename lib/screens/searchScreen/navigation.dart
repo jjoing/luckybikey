@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:geolocator/geolocator.dart';
 
 class Navigation extends StatefulWidget {
   const Navigation({
@@ -19,9 +19,26 @@ class Navigation extends StatefulWidget {
   State<Navigation> createState() => _NavigationState();
 }
 
+Future<Position> _determinePosition() async {
+  return await Geolocator.getCurrentPosition();
+}
+
+Map<String, dynamic> _updateNavState(Map<String, dynamic> navState) {
+  _determinePosition().then((value) {
+    navState['CurrentPosition'] = {
+      'latitude': value.latitude,
+      'longitude': value.longitude,
+    };
+  });
+
+  return navState;
+}
+
+Timer? timer;
+
 class _NavigationState extends State<Navigation> {
   Key _mapKey = UniqueKey();
-  Timer? timer;
+  Map<String, dynamic> navState = {};
 
   @override
   void dispose() {
@@ -30,12 +47,26 @@ class _NavigationState extends State<Navigation> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final Completer<NaverMapController> mapControllerCompleter = Completer();
+  void initState() {
+    super.initState();
+    navState = {
+      'Route': widget.route,
+      "Start": widget.start,
+      "End": widget.end,
+      "CurrentPosition": {},
+      "CurrentIndex": 0,
+    };
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
       print('timer');
-      setState(() {});
+      setState(() {
+        navState = _updateNavState(navState);
+      });
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Completer<NaverMapController> mapControllerCompleter = Completer();
     return Dialog(
       insetPadding: const EdgeInsets.all(0),
       child: Stack(
@@ -56,6 +87,9 @@ class _NavigationState extends State<Navigation> {
             forceGesture: true,
             onMapReady: (controller) {
               mapControllerCompleter.complete(controller);
+              navState['CurrentPosition'] = controller.getCameraPosition().then(
+                    (value) => value.target,
+                  );
               final path1 = NPathOverlay(
                 id: 'route',
                 coords: List<NLatLng>.from(widget.route
@@ -79,16 +113,6 @@ class _NavigationState extends State<Navigation> {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('닫기'),
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: 10,
-            child: ElevatedButton(
-              onPressed: () => setState(() {
-                _mapKey = UniqueKey();
-              }),
-              child: const Text('지도 리로드'),
             ),
           ),
         ],
