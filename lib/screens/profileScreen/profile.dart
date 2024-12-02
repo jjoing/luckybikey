@@ -145,6 +145,7 @@ class Profile extends StatelessWidget {
                         ),
                       ),
                     ),
+
                   ),
                 ],
               ),

@@ -273,10 +273,8 @@ class _loginState extends State<login> {
                           onPressed: () async {
                             await kakaoLoginProvider.login();
                             if (kakaoLoginProvider.isLogined) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const Home()),
-                              );
+                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Home()), (route) => false);// search 페이지로 이동
+
                             }
                           },
                           icon: Image.asset('assets/images/kakao_login.png',),
