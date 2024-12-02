@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-import 'screens/home.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../screens/home.dart';
+
+final _firestore = FirebaseFirestore.instance;
 
 class register extends StatefulWidget {
   const register({super.key});
@@ -56,10 +60,11 @@ class _registerState extends State<register> {
                     style: TextStyle(
                         color: Colors.lightGreen,
                         fontWeight: FontWeight.bold,
-                        fontSize: 40
-                    ),
+                        fontSize: 40),
                   ),
-                  const SizedBox(height: 50,),
+                  const SizedBox(
+                    height: 50,
+                  ),
                   SizedBox(
                     width: 278.0,
                     child: Form(
@@ -70,8 +75,12 @@ class _registerState extends State<register> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Full Name',),
-                              const SizedBox(height: 5.0,),
+                              const Text(
+                                'Full Name',
+                              ),
+                              const SizedBox(
+                                height: 5.0,
+                              ),
                               Column(
                                 children: [
                                   TextFormField(
@@ -86,8 +95,7 @@ class _registerState extends State<register> {
                                       userFullName = value;
                                     },
                                     validator: (value) {
-                                      if (value!.isEmpty ||
-                                          value.length < 5) {
+                                      if (value!.isEmpty || value.length < 5) {
                                         return 'Please enter at least 5 characters.';
                                       }
                                       return null;
@@ -97,36 +105,34 @@ class _registerState extends State<register> {
                                             .viewInsets
                                             .bottom),
                                     decoration: InputDecoration(
-                                      contentPadding:
-                                      const EdgeInsets.all(6.0),
+                                      contentPadding: const EdgeInsets.all(6.0),
                                       enabledBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Color(0xff415e91),
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Color(0xff415e91),
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                       errorBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Colors.red,
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
-                                      focusedErrorBorder:
-                                      OutlineInputBorder(
+                                      focusedErrorBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Colors.red,
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                     ),
                                   ),
@@ -141,8 +147,12 @@ class _registerState extends State<register> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Email',),
-                              const SizedBox(height: 5.0,),
+                              const Text(
+                                'Email',
+                              ),
+                              const SizedBox(
+                                height: 5.0,
+                              ),
                               Column(
                                 children: [
                                   TextFormField(
@@ -158,8 +168,7 @@ class _registerState extends State<register> {
                                       userEmail = value;
                                     },
                                     validator: (value) {
-                                      if (value!.isEmpty ||
-                                          value.length < 5) {
+                                      if (value!.isEmpty || value.length < 5) {
                                         return 'Please enter at least 5 characters.';
                                       }
                                       return null;
@@ -169,36 +178,34 @@ class _registerState extends State<register> {
                                             .viewInsets
                                             .bottom),
                                     decoration: InputDecoration(
-                                      contentPadding:
-                                      const EdgeInsets.all(6.0),
+                                      contentPadding: const EdgeInsets.all(6.0),
                                       enabledBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Color(0xff415e91),
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Color(0xff415e91),
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                       errorBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Colors.red,
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
-                                      focusedErrorBorder:
-                                      OutlineInputBorder(
+                                      focusedErrorBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Colors.red,
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                     ),
                                   ),
@@ -206,13 +213,19 @@ class _registerState extends State<register> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 5.0,),
+                          const SizedBox(
+                            height: 5.0,
+                          ),
                           // user password text field
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Password',),
-                              const SizedBox(height: 5.0,),
+                              const Text(
+                                'Password',
+                              ),
+                              const SizedBox(
+                                height: 5.0,
+                              ),
                               Column(
                                 children: [
                                   TextFormField(
@@ -228,8 +241,7 @@ class _registerState extends State<register> {
                                       userPassword = value;
                                     },
                                     validator: (value) {
-                                      if (value!.isEmpty ||
-                                          value.length < 5) {
+                                      if (value!.isEmpty || value.length < 5) {
                                         return 'Please enter at least 5 characters.';
                                       }
                                       return null;
@@ -239,36 +251,34 @@ class _registerState extends State<register> {
                                             .viewInsets
                                             .bottom),
                                     decoration: InputDecoration(
-                                      contentPadding:
-                                      const EdgeInsets.all(6.0),
+                                      contentPadding: const EdgeInsets.all(6.0),
                                       enabledBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Color(0xff415e91),
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Color(0xff415e91),
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                       errorBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Colors.red,
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
-                                      focusedErrorBorder:
-                                      OutlineInputBorder(
+                                      focusedErrorBorder: OutlineInputBorder(
                                         borderSide: const BorderSide(
                                           color: Colors.red,
                                         ),
                                         borderRadius:
-                                        BorderRadius.circular(9.0),
+                                            BorderRadius.circular(9.0),
                                       ),
                                     ),
                                   ),
@@ -276,17 +286,23 @@ class _registerState extends State<register> {
                               ),
                             ],
                           ),
-                          SizedBox(height: MediaQuery.of(context).viewInsets.bottom,),
+                          SizedBox(
+                            height: MediaQuery.of(context).viewInsets.bottom,
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20,),
+                  const SizedBox(
+                    height: 20,
+                  ),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.transparent,
-                      side: const BorderSide(color: Colors.white,),
+                      side: const BorderSide(
+                        color: Colors.white,
+                      ),
                       fixedSize: const Size(129.6, 54.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6.3),
@@ -297,26 +313,51 @@ class _registerState extends State<register> {
                       try {
                         _tryValidation();
 
-                        final newUser = await _authentication.createUserWithEmailAndPassword(
+                        final newUser = await _authentication
+                            .createUserWithEmailAndPassword(
                           email: userEmail,
                           password: userPassword,
                         );
 
                         if (newUser.user != null) {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const Home()));
+                          await _firestore
+                              .collection('users')
+                              .doc(newUser.user!.uid)
+                              .set({
+                            'uid': newUser.user!.uid,
+                            'email': newUser.user!
+                                .email, // newUser.user!.email 대신 userEmail 사용 가능
+                            'fullname': userFullName,
+                            'createdAt': FieldValue.serverTimestamp(),
+                            'Attributes': {
+                              'attr1': 0,
+                              'attr2': 0,
+                              'attr3': 0,
+                              'attr4': 0,
+                              'attr5': 0,
+                              'attr6': 0,
+                              'attr7': 0,
+                              'attr8': 0,
+                            },
+                          });
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => Home()));
                         }
                       } catch (err) {
                         debugPrint(err.toString());
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Please check your email and password.'),
+                            content:
+                                Text('Please check your email and password.'),
                             backgroundColor: Colors.blue,
                           ),
                         );
                       }
                     },
-                    child: const Text('Get Registered',),
+                    child: const Text(
+                      'Get Registered',
+                    ),
                   ),
                 ],
               ),

@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:luckybiky/screens/searchScreen/search.dart';
-import 'package:luckybiky/screens/profileScreen/profile.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+
+import 'searchScreen/search.dart';
+import 'profileScreen/profile.dart';
+import '../../utils/providers/page_provider.dart';
+import 'profileScreen/preference_survey/intro.dart';
+
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -11,8 +18,25 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   int _selectedIndex = 0; // 현재 선택된 탭 인덱스
-  final List<Widget> _pages = [const HomeContent(), const Search(), Profile()]; // 페이지 리스트
+  final List<Widget> _pages = [
+    HomeContent(),
+    Search(),
+    Profile(),
+  ]; // 페이지 리스트
 
+  // 첫 접속 여부를 확인하는 함수
+  Future<bool> checkFirstTimeUser() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isFirstTimeUser') ?? true;
+  }
+
+  // 첫 접속 완료로 표시하는 함수
+  Future<void> setFirstTimeUserCompleted() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isFirstTimeUser', false);
+  }
+
+  // 탭 변경 핸들러
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -21,43 +45,56 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text(
-          "luckybikey",
-          style: TextStyle(
-            color: Colors.lightGreen,
-            fontWeight: FontWeight.bold,
+    return FutureBuilder<bool>(
+      future: checkFirstTimeUser(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        // 첫 접속이면 안내 페이지를 표시
+        if (snapshot.data == true) {
+          return IntroToSurveyPage(onContinue: () async {
+            await setFirstTimeUserCompleted();
+            setState(() {});
+          });
+        }
+
+        // 첫 접속이 아니라면 기존 정보 화면 표시
+        return Scaffold(
+          appBar: AppBar(
+            centerTitle: true,
+            title: const Text(
+              "luckybikey",
+              style: TextStyle(
+                color: Colors.lightGreen,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            backgroundColor: Colors.white,
+            elevation: 0.0,
           ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0.0,
-      ),
-      body: _pages[_selectedIndex], // 현재 선택된 페이지를 표시
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.lightGreen,
-        unselectedItemColor: Colors.lightGreenAccent,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        onTap: _onItemTapped,
-        currentIndex: _selectedIndex,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Profile'),
-        ],
-      ),
+          body: Consumer<PageProvider>(
+            builder: (context, pageProvider, _) {
+              return _pages[pageProvider.currentPage];
+            },
+          ), // 현재 선택된 페이지를 표시
+          //bottomNavigationBar: BottomNavigation(),
+        );
+      },
     );
   }
 }
 
-// 기존 Home의 컨텐츠를 분리한 위젯 (HomeContent)
+
+// 기존 Home의 컨텐츠를 분리한 위젯
 class HomeContent extends StatelessWidget {
   const HomeContent({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final pageProvider = Provider.of<PageProvider>(context, listen: false);
+
     return Column(
       children: [
         Expanded(
@@ -96,8 +133,7 @@ class HomeContent extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   ),
                   onPressed: () {
-                    final parentState = context.findAncestorStateOfType<_HomeState>();
-                    parentState?._onItemTapped(1); // Search 페이지로 이동
+                    pageProvider.setPage(1); // search 페이지로 이동
                   },
                   child: const Text(
                     "Go to Search",
@@ -148,8 +184,7 @@ class HomeContent extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   ),
                   onPressed: () {
-                    final parentState = context.findAncestorStateOfType<_HomeState>();
-                    parentState?._onItemTapped(2); // Profile 페이지로 이동
+                    pageProvider.setPage(2); // profile 페이지로 이동
                   },
                   child: const Text(
                     "Go to Profile",

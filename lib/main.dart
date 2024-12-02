@@ -8,26 +8,42 @@ import 'firebase_options.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:provider/provider.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
 import 'utils/mapAPI.dart';
+import 'utils/providers/page_provider.dart';
+import 'utils/providers/preference_provider.dart';
+import 'utils/providers/kakao_login_provider.dart';
+
 import 'screens/home.dart';
 import 'screens/searchScreen/search.dart';
 import 'screens/profileScreen/profile.dart';
-import 'screens/profileScreen/preference_provider.dart';
-import 'login.dart';
+import 'utils/login/login.dart';
+import 'utils/login/kakao_login.dart';
 
 
 void main() async {
   await _initialize();
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  KakaoSdk.init(
+    nativeAppKey: kakao_native_key,
+    javaScriptAppKey: kakao_java_key,
+  );
+
   runApp(
-      ChangeNotifierProvider(
-        create: (context) => PreferenceProvider(),
-        child: const SplashScreen(),
-      ),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PageProvider()),
+        ChangeNotifierProvider(create: (_) => PreferenceProvider()),
+        ChangeNotifierProvider(create: (_) => KakaoLoginProvider()),
+      ],
+      child: SplashScreen(),
+    ),
   );
 }
 
