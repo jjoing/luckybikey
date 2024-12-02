@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-
 import 'package:provider/provider.dart';
-
 import '../../../utils/providers/preference_provider.dart';
 import 'survey_result.dart';
 
-class preferenceSurvey extends StatefulWidget {
+class PreferenceSurvey extends StatefulWidget {
   @override
-  _preferenceSurveyState createState() => _preferenceSurveyState();
+  _PreferenceSurveyState createState() => _PreferenceSurveyState();
 }
 
-class _preferenceSurveyState extends State<preferenceSurvey> {
+class _PreferenceSurveyState extends State<PreferenceSurvey> {
   final List<Map<String, dynamic>> surveyQuestions = [
     {
       "question": "친구와 자전거 여행을 떠날 때 당신은?",
@@ -43,10 +41,10 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
       "options": ["잠시도 멈추기 싫어 다른 길로 떠난다.", "신호가 있어도 괜찮아 그대로 간다"]
     },
     {
-      "question":"주행을 하다가 오르막을 마주쳤을 때",
-      "type":"dislike",
-      "keyword":"오르막",
-      "options":["한숨을 쉬며 자전거에서 내려서 끌고 간다", "아무도 나를 막을 수 없다. 빠르게 올라간다"],
+      "question": "주행을 하다가 오르막을 마주쳤을 때",
+      "type": "dislike",
+      "keyword": "오르막",
+      "options": ["한숨을 쉬며 자전거에서 내려서 끌고 간다", "아무도 나를 막을 수 없다. 빠르게 올라간다"],
     }
   ];
 
@@ -70,6 +68,39 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
     setState(() {
       currentQuestionIndex++;
     });
+
+    if (currentQuestionIndex >= surveyQuestions.length) {
+      _navigateToResultPage();
+    }
+  }
+
+  void _navigateToResultPage() {
+    final preferenceProvider =
+    Provider.of<PreferenceProvider>(context, listen: false);
+    final resultType =
+    _determineResultType(preferenceProvider.likes, preferenceProvider.dislikes);
+
+    ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.lightGreen,
+        padding: EdgeInsets.symmetric(
+            vertical: 15, horizontal: 50),
+      ),
+      onPressed: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) {
+              return SurveyResultPage(resultType: resultType);
+            },
+          ),
+        );
+      },
+      child: const Text(
+        '결과 보러가기',
+        style: TextStyle(fontSize: 16, color: Colors.white),
+      ),
+    );
   }
 
   String _determineResultType(List<String> likes, List<String> dislikes) {
@@ -87,10 +118,36 @@ class _preferenceSurveyState extends State<preferenceSurvey> {
   @override
   Widget build(BuildContext context) {
     if (currentQuestionIndex >= surveyQuestions.length) {
-      // 설문이 완료되면 결과 페이지로 이동
-      final preferenceProvider = Provider.of<PreferenceProvider>(context, listen: false);
-      final resultType = _determineResultType(preferenceProvider.likes, preferenceProvider.dislikes);
-      return SurveyResultPage(resultType: resultType);
+      final preferenceProvider =
+      Provider.of<PreferenceProvider>(context, listen: false);
+      final resultType =
+      _determineResultType(preferenceProvider.likes, preferenceProvider.dislikes);
+
+      return Center(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.lightGreen,
+            padding: EdgeInsets.symmetric(
+                vertical: 15, horizontal: 50),
+          ),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) {
+                  return SurveyResultPage(resultType: resultType);
+                },
+              ),
+            );
+          },
+          child: const Text(
+            '결과 보러가기',
+            style: TextStyle(fontSize: 16, color: Colors.white),
+          ),
+        ),
+      );
+
+      //return Center(child: CircularProgressIndicator());
     }
 
     final questionData = surveyQuestions[currentQuestionIndex];

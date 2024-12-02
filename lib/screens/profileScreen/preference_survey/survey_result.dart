@@ -10,8 +10,6 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 import 'kakao_share.dart';
 
-import '../../../screens/searchScreen/search.dart';
-
 import '../../../utils/providers/page_provider.dart';
 import '../../../utils/providers/preference_provider.dart';
 import '../../../utils/providers/kakao_login_provider.dart';
@@ -28,124 +26,126 @@ class SurveyResultPage extends StatelessWidget {
     final pageProvider = Provider.of<PageProvider>(context, listen: false);
     final kakaoLoginProvider = Provider.of<KakaoLoginProvider>(context);
 
-    return Scaffold(
-      backgroundColor: Colors.grey[200],
-      body: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Screenshot(
-            controller: screenshotController,
-            child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Container(
-                    padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          spreadRadius: 3,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(children: [
-                      Text(
-                        '${kakaoLoginProvider.user?.kakaoAccount?.profile?.nickname} 님의 주행 취향은?',
-                        style: TextStyle(
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      resultWidget(resultType: resultType),
-                      const SizedBox(height: 25),
-                      Text(
-                        "취향 키워드 모아보기",
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.lightGreen),
-                      ),
-                      Wrap(
-                        spacing: 10,
-                        children: preferenceProvider.likes
-                            .map((like) => Chip(label: Text(like)))
-                            .toList(),
-                      ),
-                      Wrap(
-                        spacing: 10,
-                        children: preferenceProvider.dislikes
-                            .map((dislike) => Chip(label: Text(dislike)))
-                            .toList(),
-                      ),
-                      const SizedBox(height: 20),
-                      TextButton(
-                        onPressed: () async {},
-                        child: Text(
-                          '취향 키워드 수정하기',
-                          style: const TextStyle(
-                              color: Colors.black38, fontSize: 12),
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.download, color: Colors.blue),
-                            onPressed: () async {
-                              await screenshotController
-                                  .capture(
-                                      delay: Duration(milliseconds: 10),
-                                      pixelRatio: MediaQuery.of(context)
-                                          .devicePixelRatio)
-                                  .then((Uint8List? image) async {
-                                if (image != null) {
-                                  final directory =
-                                      await getApplicationDocumentsDirectory();
-                                  final imagePath =
-                                      await File('${directory.path}/image.png')
-                                          .create();
-                                  await imagePath.writeAsBytes(image);
-                                  await ImageGallerySaver.saveFile(
-                                      imagePath.path,
-                                      name: 'screenshot');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content:
-                                            Text('Image saved to $imagePath')),
-                                  );
-                                }
-                              });
-                            },
-                            tooltip: '다운로드',
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.share, color: Colors.blue),
-                            onPressed: () => kakaoShare(),
-                            tooltip: '공유',
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.grey[200],
+        body: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Screenshot(
+              controller: screenshotController,
+              child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 3,
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
                           ),
                         ],
                       ),
-                      Column(children: [
-                        const SizedBox(height: 30),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.lightGreen,
-                            padding: EdgeInsets.symmetric(
-                                vertical: 15, horizontal: 50),
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).pop;
-                            pageProvider.setPage(1); // search 페이지로 이동
-                          },
-                          child: const Text(
-                            '경로 검색하러 가기',
-                            style: TextStyle(fontSize: 16, color: Colors.white),
+                      child: Column(children: [
+                        Text(
+                          '${kakaoLoginProvider.user?.kakaoAccount?.profile?.nickname} 님의 주행 취향은?',
+                          style: TextStyle(
+                            fontSize: 12,
                           ),
                         ),
-                      ])
-                    ]))))
-      ]),
+                        const SizedBox(height: 10),
+                        resultWidget(resultType: resultType),
+                        const SizedBox(height: 15),
+                        Text(
+                          "취향 키워드 모아보기",
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.lightGreen),
+                        ),
+                        Wrap(
+                          spacing: 10,
+                          children: preferenceProvider.likes
+                              .map((like) => Chip(label: Text(like)))
+                              .toList(),
+                        ),
+                        Wrap(
+                          spacing: 10,
+                          children: preferenceProvider.dislikes
+                              .map((dislike) => Chip(label: Text(dislike)))
+                              .toList(),
+                        ),
+                        TextButton(
+                          onPressed: () async {},
+                          child: Text(
+                            '취향 키워드 수정하기',
+                            style: const TextStyle(
+                                color: Colors.black38, fontSize: 12),
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.download, color: Colors.blue),
+                              onPressed: () async {
+                                await screenshotController
+                                    .capture(
+                                        delay: Duration(milliseconds: 10),
+                                        pixelRatio: MediaQuery.of(context)
+                                            .devicePixelRatio)
+                                    .then((Uint8List? image) async {
+                                  if (image != null) {
+                                    final directory =
+                                        await getApplicationDocumentsDirectory();
+                                    final imagePath =
+                                        await File('${directory.path}/image.png')
+                                            .create();
+                                    await imagePath.writeAsBytes(image);
+                                    await ImageGallerySaver.saveFile(
+                                        imagePath.path,
+                                        name: 'screenshot');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text('Image saved to $imagePath')),
+                                    );
+                                  }
+                                });
+                              },
+                              tooltip: '다운로드',
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.share, color: Colors.blue),
+                              onPressed: () => kakaoShare(),
+                              tooltip: '공유',
+                            ),
+                          ],
+                        ),
+                        Column(children: [
+                          const SizedBox(height: 15),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.lightGreen,
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 15, horizontal: 50),
+                            ),
+                            onPressed: () {
+                              pageProvider.setPage(1);
+                              Navigator.popAndPushNamed(context, '/Search');
+
+                            },
+                            child: const Text(
+                              '경로 검색하러 가기',
+                              style: TextStyle(fontSize: 16, color: Colors.white),
+                            ),
+                          ),
+                        ])
+                      ]))))
+        ]),
+      ),
     );
   }
 }
@@ -196,13 +196,13 @@ class resultWidget extends StatelessWidget {
         Text(
           data["title"]!,
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.lightGreen,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 15),
 
         // 유형 이미지
         Image.asset(
@@ -216,7 +216,7 @@ class resultWidget extends StatelessWidget {
         Text(
           data["description"]!,
           style: const TextStyle(
-            fontSize: 16,
+            fontSize: 14,
             color: Colors.black87,
           ),
           textAlign: TextAlign.center,

@@ -18,6 +18,7 @@ class KakaoLoginProvider with ChangeNotifier {
         try {
           await UserApi.instance.loginWithKakaoAccount();
           print('카카오계정으로 로그인 성공');
+
         } catch(e) {
           print('카카오계정으로 로그인 실패: $e');
         }
