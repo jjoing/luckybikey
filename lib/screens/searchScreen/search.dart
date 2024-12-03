@@ -117,10 +117,12 @@ Future<Map<String, dynamic>> _request_route(req) async {
     final dot_product =
         link1[0] * link2[0] + link1[1] * link2[1] + link1[2] * link2[2];
     route_info.add({
-      "NLatLng": current_node["NLatLng"],
-      "distance": next_node['distance'],
-      "isleft": cross_product[2] > 0,
-      "angle": acos(dot_product / (link1_norm * link2_norm)) * 180 / pi,
+      "NLatLng": current_node["NLatLng"], // 현재 노드의 좌표
+      "distance": next_node['distance'], // 다음 노드까지의 거리
+      "isleft": cross_product[2] > 0, // 다음 노드에서 좌회전인지 우회전인지 여부
+      "angle": acos(dot_product / (link1_norm * link2_norm)) *
+          180 /
+          pi, // 다음 노드에서의 회전각도
     });
   }
   route_info.add({
@@ -197,6 +199,7 @@ class _SearchState extends State<Search> {
   List<Map<String, dynamic>> searchResult = [{}, {}];
   List<Map<String, dynamic>> searchSuggestions = [];
   List<Map<String, dynamic>> publicBikes = [];
+  Set<NMarker> publicMarkers = {};
 
   Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
   bool _showMarker = false; // 마커 표시 여부
@@ -451,54 +454,64 @@ class _SearchState extends State<Search> {
                         contentPadding: EdgeInsets.all(10),
                       ),
                       forceGesture: true,
+                      onMapTapped: (point, latLng) {
+                        setState(() {
+                          cameraPosition = latLng;
+                        });
+                      },
                       onMapReady: (controller) {
                         mapControllerCompleter.complete(controller);
-                        controller.updateCamera(NCameraUpdate.withParams(
+                        controller
+                            .updateCamera(NCameraUpdate.withParams(
                           target: cameraPosition,
                           zoom: cameraZoom,
-                        ));
-                        // _showPath 상태에 따라 경로 오버레이 추가
-                        if (_showPath) {
-                          final path2 = NPathOverlay(
-                            id: 'samplePath3',
-                            coords: List<NLatLng>.from(route.map(
-                                (e) => e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
-                            color: Colors.lightGreen,
-                            width: 5,
-                          );
-                          controller.addOverlay(path2);
-                        }
-
-                        // _showMarker 상태에 따라 마커 추가
-                        if (_showMarker) {
-                          Set<NMarker> markers = {};
-                          controller.getContentBounds().then((bounds) {
-                            for (var i = 0; i < publicBikes.length; i++) {
-                              if (bounds
-                                  .containsPoint(publicBikes[i]['NLatLng'])) {
-                                markers.add(NMarker(
-                                  id: publicBikes[i]['StationId'],
-                                  position: publicBikes[i]['NLatLng'],
-                                ));
-                              }
-                            }
-                            setState(() {
-                              _showMarker = false;
-                            });
-                          });
-                          controller.addOverlayAll(markers);
-                        }
-
-                        for (var i = 0; i < searchResult.length; i++) {
-                          if (searchResult[i].isEmpty) {
-                            continue;
+                        ))
+                            .then((onValue) {
+                          // _showPath 상태에 따라 경로 오버레이 추가
+                          if (_showPath) {
+                            final path2 = NPathOverlay(
+                              id: 'samplePath3',
+                              coords: List<NLatLng>.from(route.map(
+                                  (e) => e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
+                              color: Colors.lightGreen,
+                              width: 5,
+                            );
+                            controller.addOverlay(path2);
                           }
-                          final marker = NMarker(
-                            id: 'testMarker$i',
-                            position: searchResult[i]['NLatLng'],
-                          );
-                          controller.addOverlay(marker);
-                        }
+                          // _showMarker 상태에 따라 마커 추가
+                          if (_showMarker) {
+                            if (publicMarkers.isEmpty) {
+                              controller.getContentBounds().then((bounds) {
+                                for (var i = 0; i < publicBikes.length; i++) {
+                                  if (bounds.containsPoint(
+                                      publicBikes[i]['NLatLng'])) {
+                                    publicMarkers.add(NMarker(
+                                      id: publicBikes[i]['StationId'],
+                                      position: publicBikes[i]['NLatLng'],
+                                      size: const NSize(15, 15),
+                                    ));
+                                  }
+                                }
+                                controller.addOverlayAll(publicMarkers);
+                              });
+                            } else {
+                              controller.addOverlayAll(publicMarkers);
+                            }
+                          } else {
+                            publicMarkers.clear();
+                          }
+
+                          for (var i = 0; i < searchResult.length; i++) {
+                            if (searchResult[i].isEmpty) {
+                              continue;
+                            }
+                            final marker = NMarker(
+                              id: 'testMarker$i',
+                              position: searchResult[i]['NLatLng'],
+                            );
+                            controller.addOverlay(marker);
+                          }
+                        });
                       },
                     ),
                   ),
@@ -517,15 +530,16 @@ class _SearchState extends State<Search> {
                       _pulic_bike().then((result) {
                         setState(() {
                           publicBikes = result;
-                          _showMarker = !_showMarker;
+                          _showMarker = true;
+                          _mapKey = UniqueKey();
                         });
                       }, onError: (error) {
                         print(error);
                       });
                     } else {
                       setState(() {
-                        _mapKey = UniqueKey();
                         _showMarker = !_showMarker;
+                        _mapKey = UniqueKey();
                       });
                     }
                   },
