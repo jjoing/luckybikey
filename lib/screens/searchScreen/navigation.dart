@@ -178,23 +178,25 @@ int _getProjectionNodes(List<Map<String, dynamic>> route,
 }
 
 double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
-  // 라디안 단위로 변환
-  final lat1Rad = lat1 * pi / 180;
-  final lon1Rad = lon1 * pi / 180;
-  final lat2Rad = lat2 * pi / 180;
-  final lon2Rad = lon2 * pi / 180;
+  // // 라디안 단위로 변환
+  // final lat1Rad = lat1 * pi / 180;
+  // final lon1Rad = lon1 * pi / 180;
+  // final lat2Rad = lat2 * pi / 180;
+  // final lon2Rad = lon2 * pi / 180;
 
-  // Δλ 계산
-  final dLon = lon2Rad - lon1Rad;
+  // // Δλ 계산
+  // final dLon = lon2Rad - lon1Rad;
 
-  // 방향 벡터의 θ 계산
-  final y = sin(dLon) * cos(lat2Rad);
-  final x =
-      cos(lat1Rad) * sin(lat2Rad) - sin(lat1Rad) * cos(lat2Rad) * cos(dLon);
+  // // 방향 벡터의 θ 계산
+  // final y = sin(dLon) * cos(lat2Rad);
+  // final x =
+  //     cos(lat1Rad) * sin(lat2Rad) - sin(lat1Rad) * cos(lat2Rad) * cos(dLon);
 
-  // θ를 도 단위로 변환 (북쪽 기준 0도)
-  final bearingRad = atan2(y, x);
-  final bearingDeg = (450 - bearingRad * 180 / pi) % 360; // 0~360도로 변환
+  // // θ를 도 단위로 변환 (북쪽 기준 0도)
+  // final bearingRad = atan2(y, x);
+  // final bearingDeg = (450 - bearingRad * 180 / pi) % 360; // 0~360도로 변환
+
+  double bearingDeg = (450 - 180 / pi * atan2(lat2 - lat1, lon2 - lon1)) % 360;
 
   return bearingDeg;
 }
@@ -355,27 +357,22 @@ class _NavigationState extends State<Navigation> {
           print("navState['Angle']: ${navState['Angle']}");
           print("navState['CurrentPosition']: ${navState['CurrentPosition']}");
           print("navState['CurrentIndex']: ${navState['CurrentIndex']}");
-          // NMarker marker1 = NMarker(
-          //   id: 'test1',
-          //   position: NLatLng(
-          //     navState['Route'][navState['CurrentIndex']]['NLatLng'].latitude,
-          //     navState['Route'][navState['CurrentIndex']]['NLatLng'].longitude,
-          //   ),
-          // );
-          // NMarker marker2 = NMarker(
-          //   id: 'test2',
-          //   position: NLatLng(
-          //     navState['Route'][navState['CurrentIndex'] + 1]['NLatLng']
-          //         .latitude,
-          //     navState['Route'][navState['CurrentIndex'] + 1]['NLatLng']
-          //         .longitude,
-          //   ),
-          // );
-          // _ct?.addOverlayAll({marker1, marker2});
+          NMarker marker1 = NMarker(
+            id: 'test1',
+            position: NLatLng(
+              navState['ProjectedPosition']['latitude'],
+              navState['ProjectedPosition']['longitude'],
+            ),
+          );
+          _ct?.addOverlay(marker1);
 
           print("current node: ${navState['Route'][navState['CurrentIndex']]}");
           print(
               "next node: ${navState['Route'][navState['CurrentIndex'] + 1]}");
+          print(
+              "vector: lat: ${navState['Route'][navState['CurrentIndex'] + 1]['NLatLng'].latitude - navState['Route'][navState['CurrentIndex']]['NLatLng'].latitude}, lon: ${navState['Route'][navState['CurrentIndex'] + 1]['NLatLng'].longitude - navState['Route'][navState['CurrentIndex']]['NLatLng'].longitude}");
+
+          print(calculateBearing(0, 0, 0, 1));
 
           _ct?.updateCamera(NCameraUpdate.withParams(
             target: NLatLng(
@@ -480,20 +477,6 @@ class _NavigationState extends State<Navigation> {
                   'longitude': latLng.longitude,
                 };
               });
-              final projectedPosition = _getProjectedPosition(
-                navState['Route'],
-                navState['CurrentPosition']['latitude'],
-                navState['CurrentPosition']['longitude'],
-                navState['CurrentIndex'],
-              );
-              final marker2 = NMarker(
-                id: 'test',
-                position: NLatLng(
-                  projectedPosition['latitude'],
-                  projectedPosition['longitude'],
-                ), // NLatLng로 변환된 도착지 좌표
-              );
-              _ct?.addOverlay(marker2);
             },
             onMapReady: (controller) {
               mapControllerCompleter.complete(controller);
