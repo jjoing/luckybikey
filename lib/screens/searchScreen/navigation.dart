@@ -355,23 +355,23 @@ class _NavigationState extends State<Navigation> {
           print("navState['Angle']: ${navState['Angle']}");
           print("navState['CurrentPosition']: ${navState['CurrentPosition']}");
           print("navState['CurrentIndex']: ${navState['CurrentIndex']}");
-          NMarker marker1 = NMarker(
-            id: 'test1',
-            position: NLatLng(
-              navState['Route'][navState['CurrentIndex']]['NLatLng'].latitude,
-              navState['Route'][navState['CurrentIndex']]['NLatLng'].longitude,
-            ),
-          );
-          NMarker marker2 = NMarker(
-            id: 'test2',
-            position: NLatLng(
-              navState['Route'][navState['CurrentIndex'] + 1]['NLatLng']
-                  .latitude,
-              navState['Route'][navState['CurrentIndex'] + 1]['NLatLng']
-                  .longitude,
-            ),
-          );
-          _ct?.addOverlayAll({marker1, marker2});
+          // NMarker marker1 = NMarker(
+          //   id: 'test1',
+          //   position: NLatLng(
+          //     navState['Route'][navState['CurrentIndex']]['NLatLng'].latitude,
+          //     navState['Route'][navState['CurrentIndex']]['NLatLng'].longitude,
+          //   ),
+          // );
+          // NMarker marker2 = NMarker(
+          //   id: 'test2',
+          //   position: NLatLng(
+          //     navState['Route'][navState['CurrentIndex'] + 1]['NLatLng']
+          //         .latitude,
+          //     navState['Route'][navState['CurrentIndex'] + 1]['NLatLng']
+          //         .longitude,
+          //   ),
+          // );
+          // _ct?.addOverlayAll({marker1, marker2});
 
           print("current node: ${navState['Route'][navState['CurrentIndex']]}");
           print(
