@@ -158,12 +158,16 @@ Map<String, dynamic> _updateNavState(Map<String, dynamic> navState) {
   // });
   //사정거리안에 들어오거나 가장 가까운 노드 찾기
   //그 노드가 연결한 Route들 중 점 직선 사이 거리가 가장 가까운 node 쌍 찾기_ (node1, node2) node1 to node2
-  navState['CurrentIndex'] = _getProjectionNodes(
+  final newIndex = _getProjectionNodes(
     navState['Route'],
     navState['CurrentPosition']['latitude'],
     navState['CurrentPosition']['longitude'],
     navState['CurrentIndex'],
   );
+  if (newIndex != navState['CurrentIndex']) {
+    navState['CurrentIndex'] = newIndex;
+    navState['ttsFlag'] = [false, false, false];
+  }
   //투영한 위치 반환
   //이걸로 update
 
