@@ -7,6 +7,21 @@ import 'package:flutter_tts/flutter_tts.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
+// 두 좌표 사이의 거리 계산 함수 (단위: 미터)
+double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  const double earthRadius = 6371000; // 지구 반경 (미터)
+  double phi1 = lat1 * (3.141592653589793 / 180);
+  double phi2 = lat2 * (3.141592653589793 / 180);
+  double deltaPhi = (lat2 - lat1) * (3.141592653589793 / 180);
+  double deltaLambda = (lon2 - lon1) * (3.141592653589793 / 180);
+
+  double a = (sin(deltaPhi / 2) * sin(deltaPhi / 2)) +
+      cos(phi1) * cos(phi2) * (sin(deltaLambda / 2) * sin(deltaLambda / 2));
+  double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+  return earthRadius * c; // 거리 (미터 단위)
+}
+
 class Navigation extends StatefulWidget {
   const Navigation({
     Key? key,
@@ -27,21 +42,6 @@ class Navigation extends StatefulWidget {
 
 Future<Position> _determinePosition() async {
   return await Geolocator.getCurrentPosition();
-}
-
-// 두 좌표 사이의 거리 계산 함수 (단위: 미터)
-double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-  const double earthRadius = 6371000; // 지구 반경 (미터)
-  double phi1 = lat1 * (3.141592653589793 / 180);
-  double phi2 = lat2 * (3.141592653589793 / 180);
-  double deltaPhi = (lat2 - lat1) * (3.141592653589793 / 180);
-  double deltaLambda = (lon2 - lon1) * (3.141592653589793 / 180);
-
-  double a = (sin(deltaPhi / 2) * sin(deltaPhi / 2)) +
-      cos(phi1) * cos(phi2) * (sin(deltaLambda / 2) * sin(deltaLambda / 2));
-  double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-
-  return earthRadius * c; // 거리 (미터 단위)
 }
 
 double _calculateTriangleDistance(double pointLat, double pointLon, double lat1,
