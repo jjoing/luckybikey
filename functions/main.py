@@ -180,6 +180,164 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
             message=(f"Missing argument '{e}' in request data."),
         )
 
+    if use_sharing:
+        try:  # 요청 데이터 파싱
+            start_station = req.data["StartStation"]
+            end_station = req.data["EndStation"]
+        except KeyError as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message=(f"Missing argument '{e}' in request data."),
+            )
+
+    try:  # 요청 데이터 유효성 검사
+        start_lat = start_point["lat"]
+        start_lon = start_point["lon"]
+    except KeyError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=(f"Missing argument '{e}' in start point."),
+        )
+
+    try:  # 요청 데이터 유효성 검사
+        end_lat = end_point["lat"]
+        end_lon = end_point["lon"]
+    except KeyError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=(f"Missing argument '{e}' in end point."),
+        )
+
+    if use_sharing:
+        try:  # 요청 데이터 유효성 검사
+            start_station_lat = start_station["lat"]
+            start_station_lon = start_station["lon"]
+            end_station_lat = end_station["lat"]
+            end_station_lon = end_station["lon"]
+        except KeyError as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message=(f"Missing argument '{e}' in station point."),
+            )
+
+    try:  # 요청 데이터 타입 변환
+        start_lat = float(start_lat)
+        start_lon = float(start_lon)
+        end_lat = float(end_lat)
+        end_lon = float(end_lon)
+        use_sharing = bool(use_sharing)
+        user_taste = bool(user_taste)
+    except ValueError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=(e.args[0]),
+        )
+
+    if use_sharing:
+        try:  # 요청 데이터 타입 변환
+            start_station_lat = float(start_station_lat)
+            start_station_lon = float(start_station_lon)
+            end_station_lat = float(end_station_lat)
+            end_station_lon = float(end_station_lon)
+        except ValueError as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+                message=(e.args[0]),
+            )
+
+    try:  # 노드 맵 생성
+        collection_ref = firestore_client.collection("map_data_v2")
+    except Exception as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=(e.args[0]),
+        )
+
+    try:  # 시작점에서 가장 가까운 노드 찾기
+        nearest_start_node_id, start_dist = get_nearest_node(collection_ref, start_lat, start_lon)
+        nearest_start_node = create_node(collection_ref, nearest_start_node_id)
+    except Exception as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"No nodes near the start point were found. Error: {e.args[0]}",
+        )
+
+    if use_sharing:
+        try:  # 공유 자전거 대여소에서 가장 가까운 노드 찾기
+            nearest_start_station_id, start_station_dist = get_nearest_node(collection_ref, start_station_lat, start_station_lon)
+            nearest_start_station = create_node(collection_ref, nearest_start_station_id)
+        except Exception as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INTERNAL,
+                message=f"No nodes near the start station were found. Error: {e.args[0]}",
+            )
+
+    try:  # 도착점에서 가장 가까운 노드 찾기
+        nearest_end_node_id, end_dist = get_nearest_node(collection_ref, end_lat, end_lon)
+        nearest_end_node = create_node(collection_ref, nearest_end_node_id)
+    except Exception as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message="No nodes near the end point were found. Error: {e.args[0]}",
+        )
+
+    if use_sharing:
+        try:  # 공유 자전거 반납소에서 가장 가까운 노드 찾기
+            nearest_end_station_id, end_station_dist = get_nearest_node(collection_ref, end_station_lat, end_station_lon)
+            nearest_end_station = create_node(collection_ref, nearest_end_station_id)
+        except Exception as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INTERNAL,
+                message="No nodes near the end station were found. Error: {e.args[0]}",
+            )
+
+    try:  # 시작노드-도착노드 길찾기
+        node_dict = {nearest_start_node_id: nearest_start_node, nearest_end_node_id: nearest_end_node}
+        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node)
+    except Exception as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message="No route was found between the start and end points. Error: {e.args[0]}",
+        )
+
+    if use_sharing:
+        try:  # 공유 자전거 대여소-반납소 길찾기
+            node_dict = {nearest_start_station_id: nearest_start_station, nearest_end_station_id: nearest_end_station}
+            result_start_station = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_start_station)
+            result_end_station = astar_road_finder(collection_ref, start_node=nearest_end_station, end_node=nearest_end_node)
+        except Exception as e:
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.INTERNAL,
+                message="No route was found between the start and end stations. Error: {e.args[0]}",
+            )
+
+    # 시작점과 도착점을 최종 경로에 추가
+    try:
+        start_point_node = [{"node_id": None, "lat": start_lat, "lon": start_lon}]
+        end_point_node = [{"node_id": None, "lat": end_lat, "lon": end_lon}]
+        route = start_point_node + result["route"] + end_point_node
+        full_distance = start_dist + result["full_distance"] + end_dist
+        return {"route": route, "full_distance": full_distance}
+    except Exception as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=(e.args[0]),
+        )
+
+
+@https_fn.on_call()
+def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
+    try:  # 요청 데이터 파싱
+        start_point = req.data["StartPoint"]
+        end_point = req.data["EndPoint"]
+        use_sharing = req.data["UseSharing"]
+        user_taste = req.data["UserTaste"]
+    except KeyError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=(f"Missing argument '{e}' in request data."),
+        )
+
     try:  # 요청 데이터 유효성 검사
         start_lat = start_point["lat"]
         start_lon = start_point["lon"]
@@ -212,7 +370,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 노드 맵 생성
-        collection_ref = firestore_client.collection("map_data_v2")
+        collection_ref = firestore_client.collection("map_data_songdo")
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -238,6 +396,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 시작노드-도착노드 길찾기
+        node_dict = {nearest_start_node_id: nearest_start_node, nearest_end_node_id: nearest_end_node}
         result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node)
     except Exception as e:
         raise https_fn.HttpsError(
