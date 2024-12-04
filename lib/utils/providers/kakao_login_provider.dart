@@ -8,9 +8,20 @@ class KakaoLoginProvider with ChangeNotifier {
   Future<void> login() async {
     try {
       if (await isKakaoTalkInstalled()) {
-        await UserApi.instance.loginWithKakaoTalk();
+        try {
+          await UserApi.instance.loginWithKakaoTalk();
+          print('카카오톡으로 로그인 성공');
+        } catch(e) {
+          print('카카오톡 로그인 실패: $e');
+        }
       } else {
-        await UserApi.instance.loginWithKakaoAccount();
+        try {
+          await UserApi.instance.loginWithKakaoAccount();
+          print('카카오계정으로 로그인 성공');
+
+        } catch(e) {
+          print('카카오계정으로 로그인 실패: $e');
+        }
       }
       isLogined = true;
       user = await UserApi.instance.me();

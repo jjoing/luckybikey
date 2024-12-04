@@ -38,19 +38,18 @@ class Profile extends StatelessWidget {
                   kakaoLoginProvider.user?.kakaoAccount?.profile?.profileImageUrl ?? '',
                 ),
               ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             // 닉네임
             Center(
               child: Text(
                 kakaoLoginProvider.user?.kakaoAccount?.profile?.nickname ?? '로그인이 필요합니다.',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.lightGreen[800],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
             // 로그인/로그아웃 버튼
             TextButton(
               onPressed: () async {
@@ -67,7 +66,6 @@ class Profile extends StatelessWidget {
                 style: const TextStyle(color: Colors.redAccent, fontSize: 14),
               ),
             ),
-            const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -76,7 +74,7 @@ class Profile extends StatelessWidget {
                   Divider(thickness: 1, height: 1, color: Colors.lightGreen),
                   const SizedBox(height: 20),
                   const Text(
-                    '선호도 설정 결과',
+                    '당신의 선호는?',
                     style: TextStyle(
                       color: Colors.lightGreen,
                       fontSize: 25,
@@ -90,7 +88,7 @@ class Profile extends StatelessWidget {
                     '좋아요!',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 7),
                   Wrap(
                     spacing: 8.0,
                     runSpacing: 8.0,
@@ -105,7 +103,7 @@ class Profile extends StatelessWidget {
                     '싫어요!',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 7),
                   Wrap(
                     spacing: 8.0,
                     runSpacing: 8.0,
@@ -147,6 +145,7 @@ class Profile extends StatelessWidget {
                         ),
                       ),
                     ),
+
                   ),
                 ],
               ),

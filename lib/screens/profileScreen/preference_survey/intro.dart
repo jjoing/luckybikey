@@ -50,10 +50,12 @@ class IntroToSurveyPage extends StatelessWidget {
                   if (onContinue != null) {
                     await onContinue!();
                   }
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => preferenceSurvey(),
+                      builder: (context) {
+                        return PreferenceSurvey();
+                      },
                     ),
                   );
                 },

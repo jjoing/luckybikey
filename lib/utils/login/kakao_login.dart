@@ -15,6 +15,7 @@ class KakaoLogin implements SocialLogin {
         try {
           await UserApi.instance.loginWithKakaoTalk();
           print('카카오톡으로 로그인 성공');
+
           return true;
         } catch (e) {
           print('카카오톡 로그인 실패: $e');

@@ -273,21 +273,12 @@ class _loginState extends State<login> {
                           onPressed: () async {
                             await kakaoLoginProvider.login();
                             if (kakaoLoginProvider.isLogined) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const Home()),
-                              );
+                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Home()), (route) => false);// search 페이지로 이동
+
                             }
                           },
                           icon: Image.asset('assets/images/kakao_login.png',),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () async{
-                          getUserInfo();
-                          print('\n닉네임: ${viewModel.user?.kakaoAccount?.profile?.nickname}');
-                        },
-                        child: Text('계정 정보 확인'),
                       ),
                     ],
                   ),
