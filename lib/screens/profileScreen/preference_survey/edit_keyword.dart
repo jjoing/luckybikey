@@ -9,164 +9,223 @@ class EditKeywordsPage extends StatefulWidget {
 }
 
 class _EditKeywordsPageState extends State<EditKeywordsPage> {
-  late List<String> likes;
-  late List<String> dislikes;
-  List<String> availableKeywords = [
-    '풍경',
-    '속도',
-    '안전',
-    '신호',
-    '통행량',
-    '오르막',
-  ]; // 수정 가능한 모든 키워드
+  final List<Map<String, dynamic>> allKeywords = [
+    {"type": "like", "keyword": "풍경"},
+    {"type": "like", "keyword": "안전"},
+    {"type": "like", "keyword": "속도"},
+    {"type": "dislike", "keyword": "통행량"},
+    {"type": "dislike", "keyword": "신호"},
+    {"type": "dislike", "keyword": "오르막"},
+  ];
+
+  List<String> availableLikes = [];
+  List<String> availableDislikes = [];
 
   @override
   void initState() {
     super.initState();
-    final preferenceProvider = Provider.of<PreferenceProvider>(context, listen: false);
-    likes = List<String>.from(preferenceProvider.likes);
-    dislikes = List<String>.from(preferenceProvider.dislikes);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final preferenceProvider =
+      Provider.of<PreferenceProvider>(context, listen: false);
+      final currentLikes = preferenceProvider.likes;
+      final currentDislikes = preferenceProvider.dislikes;
 
-    // 나머지 키워드 리스트에서 이미 선택된 것을 제외
-    availableKeywords.removeWhere((keyword) => likes.contains(keyword) || dislikes.contains(keyword));
-  }
+      setState(() {
+        availableLikes = allKeywords
+            .where((e) =>
+        e["type"] == "like" && !currentLikes.contains(e["keyword"]))
+            .map((e) => e["keyword"] as String)
+            .toList();
 
-  void _onSave(BuildContext context) {
-    final preferenceProvider = Provider.of<PreferenceProvider>(context, listen: false);
-    preferenceProvider.setLikes(likes);
-    preferenceProvider.setDislikes(dislikes);
-    Navigator.pop(context);
+        availableDislikes = allKeywords
+            .where((e) =>
+        e["type"] == "dislike" &&
+            !currentDislikes.contains(e["keyword"]))
+            .map((e) => e["keyword"] as String)
+            .toList();
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final preferenceProvider = Provider.of<PreferenceProvider>(context);
+    final currentLikes = preferenceProvider.likes;
+    final currentDislikes = preferenceProvider.dislikes;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('취향 키워드 수정하기'),
         backgroundColor: Colors.lightGreen,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                _buildKeywordSection('좋아요!', Colors.green, likes),
-                _buildKeywordSection('싫어요!', Colors.red, dislikes),
-              ],
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 좋아요 섹션
+            _buildKeywordSection(
+              title: '좋아요!',
+              color: Colors.green,
+              keywords: currentLikes,
+              availableKeywords: availableLikes,
+              onAdd: (data) {
+                setState(() {
+                  currentLikes.add(data);
+                  availableLikes.remove(data);
+                  preferenceProvider.setLikes(currentLikes);
+                });
+              },
+              onRemove: (data) {
+                setState(() {
+                  currentLikes.remove(data);
+                  availableLikes.add(data);
+                  preferenceProvider.setLikes(currentLikes);
+                });
+              },
             ),
-          ),
-          Expanded(
-            child: Column(
-              children: [
-                const Text(
-                  '사용 가능한 키워드',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Expanded(
-                  child: DragTarget<String>(
-                    onAccept: (data) {
-                      setState(() {
-                        availableKeywords.add(data);
-                        likes.remove(data);
-                        dislikes.remove(data);
-                      });
-                    },
-                    builder: (context, candidateData, rejectedData) {
-                      return Wrap(
-                        spacing: 10,
-                        children: availableKeywords
-                            .map((keyword) => Draggable<String>(
-                          data: keyword,
-                          child: _buildKeywordChip(keyword, Colors.grey),
-                          feedback: _buildKeywordChip(keyword, Colors.grey.withOpacity(0.5)),
-                          childWhenDragging: _buildKeywordChip(keyword, Colors.grey.withOpacity(0.3)),
-                        ))
-                            .toList(),
-                      );
-                    },
-                  ),
-                ),
-              ],
+            SizedBox(height: 20),
+            // 싫어요 섹션
+            _buildKeywordSection(
+              title: '싫어요!',
+              color: Colors.red,
+              keywords: currentDislikes,
+              availableKeywords: availableDislikes,
+              onAdd: (data) {
+                setState(() {
+                  currentDislikes.add(data);
+                  availableDislikes.remove(data);
+                  preferenceProvider.setDislikes(currentDislikes);
+                });
+              },
+              onRemove: (data) {
+                setState(() {
+                  currentDislikes.remove(data);
+                  availableDislikes.add(data);
+                  preferenceProvider.setDislikes(currentDislikes);
+                });
+              },
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
+            SizedBox(height: 30),
+            ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.lightGreen,
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
               ),
-              onPressed: () => _onSave(context),
+              onPressed: () {
+                Navigator.pop(context); // 결과 페이지로 돌아가기
+              },
               child: const Text(
-                '키워드 저장하기',
+                '결과 페이지로 돌아가기',
                 style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildKeywordSection(String title, Color color, List<String> keywords) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+  Widget _buildKeywordSection({
+    required String title,
+    required Color color,
+    required List<String> keywords,
+    required List<String> availableKeywords,
+    required Function(String) onAdd,
+    required Function(String) onRemove,
+  }) {
+    return Column(
+      children: [
+        // 키워드 섹션 박스
+        Container(
+          width: 300,
+          height: 200,
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            border: Border.all(color: color, width: 2),
+            borderRadius: BorderRadius.circular(10),
           ),
-          Expanded(
-            child: DragTarget<String>(
-              onAccept: (data) {
-                setState(() {
-                  if (title == '좋아요!') {
-                    likes.add(data);
-                  } else {
-                    dislikes.add(data);
-                  }
-                  availableKeywords.remove(data);
-                });
-              },
-              builder: (context, candidateData, rejectedData) {
-                return Wrap(
-                  spacing: 10,
-                  children: keywords
-                      .map((keyword) => Draggable<String>(
-                    data: keyword,
-                    child: _buildKeywordChip(keyword, color),
-                    feedback: _buildKeywordChip(keyword, color.withOpacity(0.5)),
-                    childWhenDragging: _buildKeywordChip(keyword, color.withOpacity(0.3)),
-                  ))
-                      .toList(),
-                );
-              },
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Expanded(
+                child: DragTarget<String>(
+                  onWillAccept: (data) {
+                    // 해당 키워드가 추가 가능한 키워드에 있을 경우 수락
+                    return availableKeywords.contains(data) ||
+                        (!keywords.contains(data) &&
+                            allKeywords
+                                .any((e) => e["keyword"] == data && e["type"] == (title == '좋아요!' ? "like" : "dislike")));
+                  },
+                  onAccept: onAdd,
+                  builder: (context, candidateData, rejectedData) {
+                    return Wrap(
+                      spacing: 10,
+                      children: keywords
+                          .map((keyword) => Chip(
+                        label: Text(keyword),
+                        backgroundColor: color,
+                        labelStyle: TextStyle(color: Colors.white),
+                        deleteIcon:
+                        Icon(Icons.close, color: Colors.white),
+                        onDeleted: () => onRemove(keyword),
+                      ))
+                          .toList(),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKeywordChip(String keyword, Color color) {
-    return Chip(
-      label: Text(
-        keyword,
-        style: TextStyle(color: Colors.white),
-      ),
-      backgroundColor: color,
-      deleteIcon: Icon(Icons.close, color: Colors.white),
-      onDeleted: () {
-        setState(() {
-          likes.remove(keyword);
-          dislikes.remove(keyword);
-          availableKeywords.remove(keyword);
-        });
-      },
+        ),
+        SizedBox(height: 10),
+        // 추가 가능한 키워드 섹션
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Column(
+            children: [
+              Text(
+                '추가 가능한 $title 키워드',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Wrap(
+                spacing: 10,
+                children: availableKeywords
+                    .map((keyword) => Draggable<String>(
+                  data: keyword,
+                  feedback: Chip(
+                    label: Text(keyword),
+                    backgroundColor: color,
+                    labelStyle: TextStyle(color: Colors.white),
+                  ),
+                  childWhenDragging: Chip(
+                    label: Text(keyword),
+                    backgroundColor: Colors.grey,
+                    labelStyle: TextStyle(color: Colors.white),
+                  ),
+                  child: Chip(
+                    label: Text(keyword),
+                    backgroundColor: color,
+                    labelStyle: TextStyle(color: Colors.white),
+                  ),
+                ))
+                    .toList(),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
