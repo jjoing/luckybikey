@@ -11,11 +11,13 @@ class Navigation extends StatefulWidget {
   const Navigation({
     Key? key,
     required this.route,
+    required this.fullDistance,
     required this.start,
     required this.end,
   }) : super(key: key);
 
   final List<Map<String, dynamic>> route;
+  final double fullDistance;
   final Map<String, dynamic> start;
   final Map<String, dynamic> end;
 
@@ -60,10 +62,22 @@ double _calculateTriangleDistance(double pointLat, double pointLon, double lat1,
   // double distance =
   //     (A * pointLon - B * pointLat + lon2 * lat1 - lat2 * lon1).abs() /
   //         (sqrt(A * A + B * B)); // 수직 거리 계산
-  double distance =
-      ((lon2 - lon1) * (lat1 - pointLat) - (lon1 - pointLon) * (lat2 - lat1))
-              .abs() /
-          sqrt(pow(lon2 - lon1, 2) + pow(lat2 - lat1, 2));
+  double distance = 99999999999;
+  double projectionFactor =
+      ((pointLat - lat1) * (lat2 - lat1) + (pointLon - lon1) * (lon2 - lon1)) /
+          ((lat2 - lat1) * (lat2 - lat1) + (lon2 - lon1) * (lon2 - lon1));
+  if (projectionFactor >= -0.5 && projectionFactor <= 1.5) {
+    distance =
+        ((lon2 - lon1) * (lat1 - pointLat) - (lon1 - pointLon) * (lat2 - lat1))
+                .abs() /
+            sqrt(pow(lon2 - lon1, 2) + pow(lat2 - lat1, 2));
+  } else if (projectionFactor < -0.5) {
+    distance = sqrt((pointLat - lat1) * (pointLat - lat1) +
+        (pointLon - lon1) * (pointLon - lon1));
+  } else if (projectionFactor > 1.5) {
+    distance = sqrt((pointLat - lat2) * (pointLat - lat2) +
+        (pointLon - lon2) * (pointLon - lon2));
+  }
 
   return distance;
 }
@@ -81,10 +95,20 @@ Map<String, dynamic> _getProjectedPosition(List<Map<String, dynamic>> route,
   double lineLengthSquare = dx * dx + dy * dy;
   double projectionFactor = dotProduct / lineLengthSquare;
 
+  double projectionLatitude = 0;
+  double projectionLongitude = 0;
+
   // 투영된 점 계산
-  double projectionLatitude = point['NLatLng'].latitude + projectionFactor * dx;
-  double projectionLongitude =
-      point['NLatLng'].longitude + projectionFactor * dy;
+  if (projectionFactor < 0) {
+    projectionLatitude = point['NLatLng'].latitude;
+    projectionLongitude = point['NLatLng'].longitude;
+  } else if (projectionFactor > 1) {
+    projectionLatitude = nextPoint['NLatLng'].latitude;
+    projectionLongitude = nextPoint['NLatLng'].longitude;
+  } else {
+    projectionLatitude = point['NLatLng'].latitude + projectionFactor * dx;
+    projectionLongitude = point['NLatLng'].longitude + projectionFactor * dy;
+  }
 
   return {
     'latitude': projectionLatitude,
@@ -96,6 +120,10 @@ int _getProjectionNodes(List<Map<String, dynamic>> route,
     double currentLatitude, double currentLongitude, int lastIndex) {
   List<int> closeNodeIndexList = []; //index 쌍 출발점 Index 저장
   int projectionNodeIndex = -1;
+
+  if (lastIndex > 2) {
+    lastIndex -= 2;
+  }
 
   for (int i = lastIndex; i < route.length - 1; i++) {
     // 현재 노드 (point)와 그 다음 노드 (nextPoint)
@@ -117,13 +145,13 @@ int _getProjectionNodes(List<Map<String, dynamic>> route,
         nextPointLatitude, nextPointLongitude);
 
     // 가까운 노드들만 추가 (50미터 이내로)
-    if (distance < 50 ||
+    if (distance < 10 ||
         (distance < nextDistance && projectionNodeIndex == -1)) {
       closeNodeIndexList.add(i);
     }
 
     // 3개 이상의 노드가 추가되었고, 현재 노드와 다음 노드의 거리가 다르면 종료 ???
-    if (closeNodeIndexList.length > 3 && distance > nextDistance) {
+    if (closeNodeIndexList.length > 6 && distance > nextDistance) {
       break;
     }
   }
@@ -149,7 +177,30 @@ int _getProjectionNodes(List<Map<String, dynamic>> route,
   return projectionNodeIndex;
 }
 
-Map<String, dynamic> _updateNavState(Map<String, dynamic> navState) {
+double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
+  // 라디안 단위로 변환
+  final lat1Rad = lat1 * pi / 180;
+  final lon1Rad = lon1 * pi / 180;
+  final lat2Rad = lat2 * pi / 180;
+  final lon2Rad = lon2 * pi / 180;
+
+  // Δλ 계산
+  final dLon = lon2Rad - lon1Rad;
+
+  // 방향 벡터의 θ 계산
+  final y = sin(dLon) * cos(lat2Rad);
+  final x =
+      cos(lat1Rad) * sin(lat2Rad) - sin(lat1Rad) * cos(lat2Rad) * cos(dLon);
+
+  // θ를 도 단위로 변환 (북쪽 기준 0도)
+  final bearingRad = atan2(y, x);
+  final bearingDeg = (450 - bearingRad * 180 / pi) % 360; // 0~360도로 변환
+
+  return bearingDeg;
+}
+
+Future<Map<String, dynamic>> _updateNavState(
+    Map<String, dynamic> navState) async {
   // _determinePosition().then((value) {
   //   navState['CurrentPosition'] = {
   //     'latitude': value.latitude,
@@ -198,42 +249,62 @@ Map<String, dynamic> _updateNavState(Map<String, dynamic> navState) {
     next_node['NLatLng'].longitude,
   );
 
-  var ttsMessage = '';
-  if (distance < 20 && navState['ttsFlag'][0] == false) {
-    ttsMessage = '${distance.round()}미터 앞 ';
-    if (current_node['angle'] > 45) {
-      switch (current_node['isleft']) {
-        case true:
-          ttsMessage += '좌회전입니다';
-        case false:
-          ttsMessage += '우회전입니다';
-      }
-    } else {
-      ttsMessage += '직진입니다';
+  navState['Angle'] = calculateBearing(
+    current_node['NLatLng'].latitude,
+    current_node['NLatLng'].longitude,
+    next_node['NLatLng'].latitude,
+    next_node['NLatLng'].longitude,
+  );
+
+  if (navState['CurrentIndex'] == navState['Route'].length - 2) {
+    if (distance < 20) {
+      tts.speak('목적지에 도착했습니다');
+      print('목적지에 도착했습니다');
+      navState['finishFlag'] = true;
+      return navState;
+    } else if (navState['ttsFlag'][0] == false) {
+      tts.speak('목적지까지 ${distance.round()}미터 남았습니다');
+      print('목적지까지 ${distance.round()}미터 남았습니다');
+      navState['ttsFlag'][0] = true;
     }
-    tts.speak(ttsMessage);
-    print(ttsMessage);
-    navState['ttsFlag'][0] = true;
-  } else if (distance < 50 && navState['ttsFlag'][1] == false) {
-    ttsMessage = '${distance.round()}미터 후 ';
-    if (current_node['angle'] > 45) {
-      switch (current_node['isleft']) {
-        case true:
-          ttsMessage += '좌회전하세요';
-        case false:
-          ttsMessage += '우회전하세요';
+  } else {
+    var ttsMessage = '';
+    if (distance < 20 && navState['ttsFlag'][0] == false) {
+      ttsMessage = '${distance.round()}미터 앞 ';
+      if (current_node['angle'] > 45) {
+        switch (current_node['isleft']) {
+          case true:
+            ttsMessage += '좌회전입니다';
+          case false:
+            ttsMessage += '우회전입니다';
+        }
+      } else {
+        ttsMessage += '직진입니다';
       }
-    } else {
-      ttsMessage += '직진하세요';
+      tts.speak(ttsMessage);
+      print(ttsMessage);
+      navState['ttsFlag'][0] = true;
+    } else if (distance < 50 && navState['ttsFlag'][1] == false) {
+      ttsMessage = '${distance.round()}미터 후 ';
+      if (current_node['angle'] > 45) {
+        switch (current_node['isleft']) {
+          case true:
+            ttsMessage += '좌회전하세요';
+          case false:
+            ttsMessage += '우회전하세요';
+        }
+      } else {
+        ttsMessage += '직진하세요';
+      }
+      tts.speak(ttsMessage);
+      print(ttsMessage);
+      navState['ttsFlag'][1] = true;
+    } else if (navState['ttsFlag'][2] == false) {
+      ttsMessage = '${distance.round()}미터동안 직진입니다';
+      tts.speak(ttsMessage);
+      print(ttsMessage);
+      navState['ttsFlag'][2] = true;
     }
-    tts.speak(ttsMessage);
-    print(ttsMessage);
-    navState['ttsFlag'][1] = true;
-  } else if (navState['ttsFlag'][2] == false) {
-    ttsMessage = '${distance.round()}미터동안 직진입니다';
-    tts.speak(ttsMessage);
-    print(ttsMessage);
-    navState['ttsFlag'][2] = true;
   }
 
   return navState;
@@ -241,6 +312,8 @@ Map<String, dynamic> _updateNavState(Map<String, dynamic> navState) {
 
 Timer? timer;
 final FlutterTts tts = FlutterTts();
+NaverMapController? _ct;
+int _rating = 0;
 
 class _NavigationState extends State<Navigation> {
   Key _mapKey = UniqueKey();
@@ -265,7 +338,9 @@ class _NavigationState extends State<Navigation> {
       },
       "CurrentIndex": 0,
       "ProjectedPosition": {},
+      "Angle": 0,
       "ttsFlag": [false, false, false],
+      "finishFlag": false,
       "testPosition": NLatLng(37.5666102, 126.9783881),
     };
     tts.setLanguage("ko-KR"); //언어설정
@@ -275,9 +350,92 @@ class _NavigationState extends State<Navigation> {
     timer = Timer.periodic(const Duration(seconds: 3), (t) {
       print('timer');
       setState(() {
-        navState = _updateNavState(navState);
-        print(navState['CurrentPosition']);
-        print(navState['CurrentIndex']);
+        _updateNavState(navState).then((value) {
+          navState = value;
+          print("navState['Angle']: ${navState['Angle']}");
+          print("navState['CurrentPosition']: ${navState['CurrentPosition']}");
+          print("navState['CurrentIndex']: ${navState['CurrentIndex']}");
+          NMarker marker1 = NMarker(
+            id: 'test1',
+            position: NLatLng(
+              navState['Route'][navState['CurrentIndex']]['NLatLng'].latitude,
+              navState['Route'][navState['CurrentIndex']]['NLatLng'].longitude,
+            ),
+          );
+          NMarker marker2 = NMarker(
+            id: 'test2',
+            position: NLatLng(
+              navState['Route'][navState['CurrentIndex'] + 1]['NLatLng']
+                  .latitude,
+              navState['Route'][navState['CurrentIndex'] + 1]['NLatLng']
+                  .longitude,
+            ),
+          );
+          _ct?.addOverlayAll({marker1, marker2});
+
+          print("current node: ${navState['Route'][navState['CurrentIndex']]}");
+          print(
+              "next node: ${navState['Route'][navState['CurrentIndex'] + 1]}");
+
+          _ct?.updateCamera(NCameraUpdate.withParams(
+            target: NLatLng(
+              navState['ProjectedPosition']['latitude'],
+              navState['ProjectedPosition']['longitude'],
+            ),
+            zoom: 17,
+            bearing: navState['Angle'],
+            tilt: 45,
+          ));
+        });
+
+        if (navState['finishFlag']) {
+          showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('안내 종료'),
+                  content: SizedBox(
+                    height: 400,
+                    child: Column(
+                      children: <Widget>[
+                        const Text('목적지에 도착했습니다'),
+                        Text('총 이동거리: ${widget.fullDistance.round()}m'),
+                        Text('총 소요시간: ${(t.tick * 3 / 60).round()}분'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(5, (index) {
+                            return IconButton(
+                              icon: Icon(
+                                  _rating > index
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 40.0),
+                              onPressed: () {
+                                setState(() {
+                                  _rating = index + 1;
+                                  print(_rating);
+                                });
+                              },
+                            );
+                          }),
+                        )
+                      ],
+                    ),
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('확인'),
+                    ),
+                  ],
+                );
+              });
+          timer?.cancel();
+        }
       });
     });
   }
@@ -295,9 +453,14 @@ class _NavigationState extends State<Navigation> {
               mapType: NMapType.navi,
               initialCameraPosition: NCameraPosition(
                 target: widget.start['NLatLng'], // NLatLng로 변환된 출발지 좌표
-                zoom: 16,
-                bearing: 0,
-                tilt: 0,
+                zoom: 17,
+                bearing: calculateBearing(
+                  widget.start['NLatLng'].latitude,
+                  widget.start['NLatLng'].longitude,
+                  widget.route[1]['NLatLng'].latitude,
+                  widget.route[1]['NLatLng'].longitude,
+                ),
+                tilt: 45,
               ),
               locationButtonEnable: true,
               contentPadding: const EdgeInsets.all(10),
@@ -306,26 +469,38 @@ class _NavigationState extends State<Navigation> {
             onMapTapped: (point, latLng) {
               print('onMapTapped: latLng: $latLng');
 
+              // _ct?.updateCamera(NCameraUpdate.withParams(
+              //   target: latLng,
+              //   zoom: 17,
+              // ));
+
               setState(() {
-                _mapKey = UniqueKey();
                 navState['CurrentPosition'] = {
                   'latitude': latLng.latitude,
                   'longitude': latLng.longitude,
                 };
-                final projectedPosition = _getProjectedPosition(
-                  navState['Route'],
-                  navState['CurrentPosition']['latitude'],
-                  navState['CurrentPosition']['longitude'],
-                  navState['CurrentIndex'],
-                );
-                navState['testPosition'] = NLatLng(
+              });
+              final projectedPosition = _getProjectedPosition(
+                navState['Route'],
+                navState['CurrentPosition']['latitude'],
+                navState['CurrentPosition']['longitude'],
+                navState['CurrentIndex'],
+              );
+              final marker2 = NMarker(
+                id: 'test',
+                position: NLatLng(
                   projectedPosition['latitude'],
                   projectedPosition['longitude'],
-                );
-              });
+                ), // NLatLng로 변환된 도착지 좌표
+              );
+              _ct?.addOverlay(marker2);
             },
             onMapReady: (controller) {
               mapControllerCompleter.complete(controller);
+              setState(() {
+                _ct = controller;
+              });
+              // mapControllerCompleter.complete(controller);
               final path1 = NPathOverlay(
                 id: 'route',
                 coords: List<NLatLng>.from(widget.route
@@ -334,18 +509,6 @@ class _NavigationState extends State<Navigation> {
                 width: 5,
               );
               controller.addOverlay(path1);
-              final marker1 = NMarker(
-                id: 'start',
-                // icon:
-                //     NOverlayImage.fromFile(File('assets/images/nav_icon.png')),
-                position: widget.start['NLatLng'], // NLatLng로 변환된 출발지 좌표
-              );
-              controller.addOverlay(marker1);
-              final marker2 = NMarker(
-                id: 'test',
-                position: navState['testPosition'], // NLatLng로 변환된 도착지 좌표
-              );
-              controller.addOverlay(marker2);
             },
           ),
           Positioned(

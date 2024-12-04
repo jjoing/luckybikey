@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -196,6 +197,7 @@ class _SearchState extends State<Search> {
   }).toList();
 
   List<Map<String, dynamic>> route = [];
+  double fullDistance = 0.0;
   List<Map<String, dynamic>> searchResult = [{}, {}];
   List<Map<String, dynamic>> searchSuggestions = [];
   List<Map<String, dynamic>> publicBikes = [];
@@ -379,6 +381,7 @@ class _SearchState extends State<Search> {
                               builder: (BuildContext context) {
                                 return Navigation(
                                   route: route,
+                                  fullDistance: fullDistance,
                                   start: searchResult[0],
                                   end: searchResult[1],
                                 );
@@ -423,6 +426,7 @@ class _SearchState extends State<Search> {
                                 print("request_route done");
                                 _mapKey = UniqueKey();
                                 route = result['route'];
+                                fullDistance = result['full_distance'];
                                 _showPath = true;
                               });
                             }, onError: (error, stackTrace) {
