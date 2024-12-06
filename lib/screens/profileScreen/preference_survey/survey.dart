@@ -3,6 +3,12 @@ import 'package:provider/provider.dart';
 import '../../../utils/providers/preference_provider.dart';
 import 'survey_result.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+final _firestore = FirebaseFirestore.instance;
+final _authentication = FirebaseAuth.instance;
+
 class PreferenceSurvey extends StatefulWidget {
   @override
   _PreferenceSurveyState createState() => _PreferenceSurveyState();
@@ -52,7 +58,7 @@ class _PreferenceSurveyState extends State<PreferenceSurvey> {
 
   void _selectOption(String type, String keyword, bool isLiked) {
     final preferenceProvider =
-    Provider.of<PreferenceProvider>(context, listen: false);
+        Provider.of<PreferenceProvider>(context, listen: false);
     if (type == "like") {
       isLiked
           ? preferenceProvider.addLike(keyword)
@@ -76,15 +82,14 @@ class _PreferenceSurveyState extends State<PreferenceSurvey> {
 
   void _navigateToResultPage() {
     final preferenceProvider =
-    Provider.of<PreferenceProvider>(context, listen: false);
-    final resultType =
-    _determineResultType(preferenceProvider.likes, preferenceProvider.dislikes);
+        Provider.of<PreferenceProvider>(context, listen: false);
+    final resultType = _determineResultType(
+        preferenceProvider.likes, preferenceProvider.dislikes);
 
     ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.lightGreen,
-        padding: EdgeInsets.symmetric(
-            vertical: 15, horizontal: 50),
+        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
       ),
       onPressed: () {
         Navigator.pushReplacement(
@@ -106,7 +111,9 @@ class _PreferenceSurveyState extends State<PreferenceSurvey> {
   String _determineResultType(List<String> likes, List<String> dislikes) {
     if (likes.contains("풍경") && !likes.contains("속도")) {
       return "scenery";
-    } else if (likes.contains("속도") && dislikes.contains("신호") && !dislikes.contains("오르막")) {
+    } else if (likes.contains("속도") &&
+        dislikes.contains("신호") &&
+        !dislikes.contains("오르막")) {
       return "health";
     } else if (likes.contains("안전") && !dislikes.contains("신호")) {
       return "safety";
@@ -115,22 +122,75 @@ class _PreferenceSurveyState extends State<PreferenceSurvey> {
     }
   }
 
+  Map<String, int> _determineAttributes(
+      List<String> likes, List<String> dislikes) {
+    final results = likes + dislikes;
+    final attributes = {
+      "scenery": 0,
+      "safety": 0,
+      "traffic": 0,
+      "fast": 0,
+      "signal": 0,
+      "uphill": 0,
+      "bigRoad": 0,
+      "bikePath": 0,
+    };
+    if (results.contains("풍경")) {
+      attributes["scenery"] = 1;
+    } else {
+      attributes["scenery"] = -1;
+    }
+    if (results.contains("안전")) {
+      attributes["safety"] = 1;
+    } else {
+      attributes["safety"] = -1;
+    }
+    if (results.contains("통행량")) {
+      attributes["traffic"] = -1;
+    } else {
+      attributes["traffic"] = 1;
+    }
+    if (results.contains("속도")) {
+      attributes["fast"] = 1;
+    } else {
+      attributes["fast"] = -1;
+    }
+    if (results.contains("신호")) {
+      attributes["signal"] = -1;
+    } else {
+      attributes["signal"] = 1;
+    }
+    if (results.contains("오르막")) {
+      attributes["uphill"] = -1;
+    } else {
+      attributes["uphill"] = 1;
+    }
+    return attributes;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (currentQuestionIndex >= surveyQuestions.length) {
       final preferenceProvider =
-      Provider.of<PreferenceProvider>(context, listen: false);
-      final resultType =
-      _determineResultType(preferenceProvider.likes, preferenceProvider.dislikes);
+          Provider.of<PreferenceProvider>(context, listen: false);
+      final resultType = _determineResultType(
+          preferenceProvider.likes, preferenceProvider.dislikes);
+      final attributes = _determineAttributes(
+          preferenceProvider.likes, preferenceProvider.dislikes);
 
       return Center(
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.lightGreen,
-            padding: EdgeInsets.symmetric(
-                vertical: 15, horizontal: 50),
+            padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
           ),
           onPressed: () {
+            _firestore
+                .collection('users')
+                .doc(_authentication.currentUser?.uid)
+                .update({
+              'attributes': attributes,
+            });
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

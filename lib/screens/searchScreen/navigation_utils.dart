@@ -7,6 +7,8 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../utils/mapAPI.dart';
 
@@ -60,6 +62,13 @@ Map<String, dynamic> updateNavState(
     nextNode['NLatLng'].longitude,
   );
 
+  final distanceToEnd = calculateDistance(
+    navState['ProjectedPosition']['latitude'],
+    navState['ProjectedPosition']['longitude'],
+    navState['Route'][navState['Route'].length - 1]['NLatLng'].latitude,
+    navState['Route'][navState['Route'].length - 1]['NLatLng'].longitude,
+  );
+
   navState['Angle'] = calculateBearing(
     currentNode['NLatLng'].latitude,
     currentNode['NLatLng'].longitude,
@@ -67,22 +76,30 @@ Map<String, dynamic> updateNavState(
     nextNode['NLatLng'].longitude,
   );
 
+  print('current index: ${navState["CurrentIndex"]} distance: $distance');
+
+  if (distanceToEnd < 50) {
+    tts.speak('목적지에 도착했습니다');
+    print('목적지에 도착했습니다');
+    navState['finishFlag'] = true;
+    return navState;
+  }
   if (navState['CurrentIndex'] == navState['Route'].length - 2) {
-    if (distance < 20) {
+    if (distance < 50) {
       tts.speak('목적지에 도착했습니다');
       print('목적지에 도착했습니다');
       navState['finishFlag'] = true;
       return navState;
     } else if (navState['ttsFlag'][0] == false) {
-      tts.speak('목적지까지 ${distance.round()}미터 남았습니다');
+      tts.speak('목적지까지 ${(distance / 10).floor() * 10}미터 남았습니다');
       print('목적지까지 ${distance.round()}미터 남았습니다');
       navState['ttsFlag'][0] = true;
     }
   } else {
     var ttsMessage = '';
-    if (distance < 20) {
+    if (distance < 50) {
       if (navState['ttsFlag'][0] == false) {
-        ttsMessage = '${distance.round()}미터 앞 ';
+        ttsMessage = '${(distance / 10).floor() * 10}미터 앞 ';
         if (currentNode['angle'] > 45) {
           switch (currentNode['isleft']) {
             case true:
@@ -97,9 +114,9 @@ Map<String, dynamic> updateNavState(
         print(ttsMessage);
         navState['ttsFlag'][0] = true;
       }
-    } else if (distance < 50) {
+    } else if (distance < 100) {
       if (navState['ttsFlag'][1] == false) {
-        ttsMessage = '${distance.round()}미터 후 ';
+        ttsMessage = '${(distance / 10).floor() * 10}미터 후 ';
         if (currentNode['angle'] > 45) {
           switch (currentNode['isleft']) {
             case true:
@@ -115,7 +132,7 @@ Map<String, dynamic> updateNavState(
         navState['ttsFlag'][1] = true;
       }
     } else if (navState['ttsFlag'][2] == false) {
-      ttsMessage = '${distance.round()}미터동안 직진입니다';
+      ttsMessage = '${(distance / 10).floor() * 10}미터동안 직진입니다';
       tts.speak(ttsMessage);
       print(ttsMessage);
       navState['ttsFlag'][2] = true;
@@ -282,7 +299,12 @@ Future<List<Map<String, dynamic>>> pulicBike() async {
 //길찾기 3번 연결하기
 
 Future<Map<String, dynamic>> searchRoute(
-    searchResult, usePublicBike, publicBikes) async {
+    searchResult, usePublicBike, publicBikes, firestore, authentication) async {
+  String userGroup = await firestore
+      .collection('users')
+      .doc(authentication.currentUser!.uid)
+      .get()
+      .then((value) => value.data()!['label'].toString());
   if (usePublicBike) {
     Map<String, dynamic> startStation = _getClosestPublicBikeStation(
         searchResult[0]['mapy'], searchResult[0]['mapx'], publicBikes);
@@ -297,8 +319,8 @@ Future<Map<String, dynamic>> searchRoute(
         "lat": startStation['NLatLng'].latitude,
         "lon": startStation['NLatLng'].longitude
       },
-      "UseSharing": false,
       "UserTaste": false,
+      "UserGroup": userGroup,
     });
     final fromStationResults = await _requestRoute({
       "StartPoint": {
@@ -309,8 +331,8 @@ Future<Map<String, dynamic>> searchRoute(
         "lat": endStation['NLatLng'].latitude,
         "lon": endStation['NLatLng'].longitude
       },
-      "UseSharing": false,
       "UserTaste": false,
+      "UserGroup": userGroup,
     });
     final toEndResults = await _requestRoute({
       "StartPoint": {
@@ -321,8 +343,8 @@ Future<Map<String, dynamic>> searchRoute(
         "lat": searchResult[1]['mapy'],
         "lon": searchResult[1]['mapx']
       },
-      "UseSharing": false,
       "UserTaste": false,
+      "UserGroup": userGroup,
     });
 
     // 모든 route 정보 합치기
@@ -351,8 +373,8 @@ Future<Map<String, dynamic>> searchRoute(
         "lat": searchResult[1]['mapy'],
         "lon": searchResult[1]['mapx']
       },
-      "UseSharing": false,
       "UserTaste": false,
+      "UserGroup": userGroup,
     });
 
     return results;
@@ -393,10 +415,10 @@ Future<Map<String, dynamic>> _requestRoute(req) async {
       .call(req);
 
   List<Map<String, dynamic>> route =
-      List<Map<String, dynamic>>.from(results.data['route'].map((point) {
+      List<Map<String, dynamic>>.from(results.data['path'].map((point) {
     return {
       "NLatLng": NLatLng(point['lat'], point['lon']),
-      "distance": point['distance']
+      // "distance": point['distance']
     };
   }));
 
@@ -485,10 +507,14 @@ class Navigationend extends StatefulWidget {
     Key? key,
     required this.fullDistance,
     required this.tick,
+    required this.firestore,
+    required this.authentication,
   }) : super(key: key);
 
   final double fullDistance;
   final double tick;
+  final FirebaseFirestore firestore;
+  final FirebaseAuth authentication;
 
   @override
   NavigationendState createState() => NavigationendState();
@@ -534,6 +560,12 @@ class NavigationendState extends State<Navigationend> {
       actions: <Widget>[
         TextButton(
           onPressed: () {
+            widget.firestore //TODO: Better Feedback
+                .collection('users')
+                .doc(widget.authentication.currentUser!.uid)
+                .update({
+              'rating': rating,
+            });
             Navigator.pop(context);
             Navigator.pop(context);
           },

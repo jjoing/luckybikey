@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'modal.dart';
 import 'navigation.dart';
@@ -20,6 +22,8 @@ class Search extends StatefulWidget {
 class _SearchState extends State<Search> {
   final FlutterTts tts = FlutterTts();
   NaverMapController? ct;
+  final _firestore = FirebaseFirestore.instance;
+  final _authentication = FirebaseAuth.instance;
 
   List<Map<String, dynamic>> route = [];
   double fullDistance = 0.0;
@@ -29,7 +33,7 @@ class _SearchState extends State<Search> {
   Set<NMarker> publicMarkers = {};
 
   final Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
-  bool _showMarker = false; // 마커 표시 여부
+  bool _usePublicBike = false; // 마커 표시 여부
 
   bool searchToggle = false;
   int searchIndex = 0;
@@ -245,6 +249,8 @@ class _SearchState extends State<Search> {
                                       start: searchResult[0],
                                       end: searchResult[1],
                                       tts: tts,
+                                      firestore: _firestore,
+                                      authentication: _authentication,
                                     );
                                   },
                                 ),
@@ -266,8 +272,8 @@ class _SearchState extends State<Search> {
                             } else {
                               tts.speak("경로를 찾는 중입니다.");
                               print("경로를 찾는 중입니다.");
-                              searchRoute(
-                                      searchResult, _showMarker, publicBikes)
+                              searchRoute(searchResult, _usePublicBike,
+                                      publicBikes, _firestore, _authentication)
                                   .then((result) {
                                 setState(() {
                                   route = result['route'];
@@ -337,17 +343,17 @@ class _SearchState extends State<Search> {
                       pulicBike().then((result) {
                         setState(() {
                           publicBikes = result;
-                          _showMarker = true;
+                          _usePublicBike = true;
                         });
                       }, onError: (error) {
                         print(error);
                       });
                     } else {
                       setState(() {
-                        _showMarker = !_showMarker;
+                        _usePublicBike = !_usePublicBike;
                       });
                     }
-                    if (_showMarker) {
+                    if (_usePublicBike) {
                       ct?.getContentBounds().then((bounds) {
                         for (var i = 0; i < publicBikes.length; i++) {
                           if (bounds.containsPoint(publicBikes[i]['NLatLng'])) {

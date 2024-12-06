@@ -12,7 +12,6 @@ import 'social_login.dart';
 
 import '../providers/kakao_login_provider.dart';
 
-
 class login extends StatefulWidget {
   const login({super.key});
 
@@ -64,10 +63,9 @@ class _loginState extends State<login> {
                   const Text(
                     'Login',
                     style: TextStyle(
-                      color: Colors.lightGreen,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 40
-                    ),
+                        color: Colors.lightGreen,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 40),
                   ),
                   const SizedBox(
                     height: 50,
@@ -79,8 +77,12 @@ class _loginState extends State<login> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Email',),
-                          const SizedBox(height: 5.0,),
+                          const Text(
+                            'Email',
+                          ),
+                          const SizedBox(
+                            height: 5.0,
+                          ),
                           Column(
                             children: [
                               TextFormField(
@@ -108,19 +110,27 @@ class _loginState extends State<login> {
                                 decoration: InputDecoration(
                                   contentPadding: const EdgeInsets.all(6.0),
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Color(0xff415e91),),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xff415e91),
+                                    ),
                                     borderRadius: BorderRadius.circular(9.0),
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Color(0xff415e91),),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xff415e91),
+                                    ),
                                     borderRadius: BorderRadius.circular(9.0),
                                   ),
                                   errorBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.red,),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                    ),
                                     borderRadius: BorderRadius.circular(9.0),
                                   ),
                                   focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.red,),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                    ),
                                     borderRadius: BorderRadius.circular(9.0),
                                   ),
                                 ),
@@ -131,7 +141,9 @@ class _loginState extends State<login> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20.0,),
+                  const SizedBox(
+                    height: 20.0,
+                  ),
 
                   // user password text field
                   Column(
@@ -166,7 +178,8 @@ class _loginState extends State<login> {
                                 return null;
                               },
                               scrollPadding: EdgeInsets.only(
-                                  bottom: MediaQuery.of(context).viewInsets.bottom),
+                                  bottom:
+                                      MediaQuery.of(context).viewInsets.bottom),
                               decoration: InputDecoration(
                                 contentPadding: const EdgeInsets.all(6.0),
                                 enabledBorder: OutlineInputBorder(
@@ -214,11 +227,15 @@ class _loginState extends State<login> {
                       'New Here? Register',
                     ),
                     onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => const register()));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const register()));
                     },
                   ),
-                  SizedBox(height: 20,),
+                  const SizedBox(
+                    height: 20,
+                  ),
                   // login button
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
@@ -227,7 +244,8 @@ class _loginState extends State<login> {
                       side: const BorderSide(
                         color: Colors.white,
                       ),
-                      fixedSize: Size(MediaQuery.of(context).size.width*0.45, 48.0),
+                      fixedSize:
+                          Size(MediaQuery.of(context).size.width * 0.45, 48.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6.3),
                       ),
@@ -253,8 +271,8 @@ class _loginState extends State<login> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text(
-                                'Please check your email and password.'),
+                            content:
+                                Text('Please check your email and password.'),
                             backgroundColor: Colors.blue,
                           ),
                         );
@@ -264,20 +282,28 @@ class _loginState extends State<login> {
                       'Login',
                     ),
                   ),
-                  SizedBox(height: 10,),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   Column(
                     children: [
                       Container(
-                        width: MediaQuery.of(context).size.width*0.5,
+                        width: MediaQuery.of(context).size.width * 0.5,
                         child: IconButton(
                           onPressed: () async {
                             await kakaoLoginProvider.login();
                             if (kakaoLoginProvider.isLogined) {
-                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Home()), (route) => false);// search 페이지로 이동
-
+                              print(kakaoLoginProvider.user);
+                              Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => Home()),
+                                  (route) => false); // search 페이지로 이동
                             }
                           },
-                          icon: Image.asset('assets/images/kakao_login.png',),
+                          icon: Image.asset(
+                            'assets/images/kakao_login.png',
+                          ),
                         ),
                       ),
                     ],
@@ -291,11 +317,18 @@ class _loginState extends State<login> {
 
   void scrollAnimate() {
     Future.delayed(const Duration(milliseconds: 600), () {
-      scrollController.animateTo(
-        MediaQuery.of(context).viewInsets.bottom,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeIn,
-      );
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          MediaQuery.of(context).viewInsets.bottom,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeIn,
+        );
+      }
+      // scrollController.animateTo(
+      //   MediaQuery.of(context).viewInsets.bottom,
+      //   duration: const Duration(milliseconds: 100),
+      //   curve: Curves.easeIn,
+      // );
     });
   }
 }
