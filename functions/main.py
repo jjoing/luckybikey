@@ -2,18 +2,23 @@
 # For more information, see https://firebase.google.com/docs/functions/manage-functions
 # and https://firebase.google.com/docs/functions/callable
 
-from firebase_admin import initialize_app, firestore
-from firebase_functions import https_fn
+from pandas import DataFrame
+from sklearn.cluster import KMeans
+from firebase_functions.firestore_fn import on_document_updated
+from zoneinfo import ZoneInfo
+
+from firebase_admin import initialize_app, firestore, auth
+from firebase_functions import https_fn, scheduler_fn, options
 from google.cloud.firestore_v1.base_query import FieldFilter
 from google.cloud.firestore import CollectionReference
 
 from typing import Dict, List, TypedDict
 from geopy.distance import distance
 import heapq
-import numpy as np
+from numpy import array, dot
 
-AStarReturn = TypedDict("AStarReturn", {"route": List[Dict[str, float]], "full_distance": float})
-RequestRouteReturn = TypedDict("RequestRouteReturn", {"route": List[Dict[str, float]], "full_distance": float})
+AStarReturn = TypedDict("AStarReturn", {"route": List[Dict[str, float]], "path": List[Dict[str, float]], "full_distance": float})
+RequestRouteReturn = TypedDict("RequestRouteReturn", {"route": List[Dict[str, float]], "path": List[Dict[str, float]], "full_distance": float})
 
 
 initialize_app()
@@ -59,9 +64,9 @@ def heuristic_preference_distance(cur_node: Node, end_node: Node, group_road_typ
 
     feature_num = len(group_preference)  # feature_num을 고정 값인 preference를 다 더한 값을 사용하면 어떻게 될까.. 음수가 될 수도 있긴한데 음수를 0으로 빼버리면?
     pref_sum = abs(sum(group_preference))
-    lt = np.array(group_road_type)
-    gp = np.array(group_preference)
-    road_preference = np.dot(lt, gp)
+    lt = array(group_road_type)
+    gp = array(group_preference)
+    road_preference = dot(lt, gp)
 
     if all(abs(x) < 0.3 for x in group_preference):  # group의 preference이기 때문에 이미 0.3보다 작은 애들은 preference를 끄고 진행한다고 생각하고 코드 짜기
         pref_sum = feature_num
@@ -89,11 +94,14 @@ def astar_road_finder(
 
         if cur_node == end_node:
             final_road = []
+            final_path = [{"node_id": cur_node.id, "lat": cur_node.lat, "lon": cur_node.lon}]
             total_distance = cur_node.g
             while cur_node is not None:
                 final_road.append({"node_id": cur_node.id, "lat": cur_node.lat, "lon": cur_node.lon})
+                if cur_node.parent is not None:
+                    final_path += [{"node_id": cur_node.id, "lat": branch["lat"], "lon": branch["lon"]} for branch in cur_node.connections[str(cur_node.parent.id)]["routes"][0]["branch"][1:]]
                 cur_node = cur_node.parent
-            return {"route": final_road[::-1], "full_distance": total_distance}
+            return {"route": final_road[::-1], "path": final_path[::-1], "full_distance": total_distance}
 
         for id, inner_dict in cur_node.connections.items():
             new_node = create_node(collection_ref, id)
@@ -167,7 +175,7 @@ def create_node(collection_ref: CollectionReference, id: int) -> Node:
     return node
 
 
-@https_fn.on_call()
+@https_fn.on_call(timeout_sec=120, memory=options.MemoryOption.MB_512)
 def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
         start_point = req.data["StartPoint"]
@@ -278,7 +286,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message="No nodes near the end point were found. Error: {e.args[0]}",
+            message=f"No nodes near the end point were found. Error: {e.args[0]}",
         )
 
     if use_sharing:
@@ -288,7 +296,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         except Exception as e:
             raise https_fn.HttpsError(
                 code=https_fn.FunctionsErrorCode.INTERNAL,
-                message="No nodes near the end station were found. Error: {e.args[0]}",
+                message=f"No nodes near the end station were found. Error: {e.args[0]}",
             )
 
     try:  # 시작노드-도착노드 길찾기
@@ -297,7 +305,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message="No route was found between the start and end points. Error: {e.args[0]}",
+            message=f"No route was found between the start and end points. Error: {e.args[0]}",
         )
 
     if use_sharing:
@@ -308,7 +316,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         except Exception as e:
             raise https_fn.HttpsError(
                 code=https_fn.FunctionsErrorCode.INTERNAL,
-                message="No route was found between the start and end stations. Error: {e.args[0]}",
+                message=f"No route was found between the start and end stations. Error: {e.args[0]}",
             )
 
     # 시작점과 도착점을 최종 경로에 추가
@@ -316,8 +324,9 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         start_point_node = [{"node_id": None, "lat": start_lat, "lon": start_lon}]
         end_point_node = [{"node_id": None, "lat": end_lat, "lon": end_lon}]
         route = start_point_node + result["route"] + end_point_node
+        path = start_point_node + result["path"] + end_point_node
         full_distance = start_dist + result["full_distance"] + end_dist
-        return {"route": route, "full_distance": full_distance}
+        return {"route": route, "path": path, "full_distance": full_distance}
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -325,7 +334,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
 
-@https_fn.on_call()
+@https_fn.on_call(min_instances=1, timeout_sec=120, memory=options.MemoryOption.MB_512)
 def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
         start_point = req.data["StartPoint"]
@@ -392,7 +401,7 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message="No nodes near the end point were found. Error: {e.args[0]}",
+            message=f"No nodes near the end point were found. Error: {e.args[0]}",
         )
 
     try:  # 시작노드-도착노드 길찾기
@@ -401,7 +410,7 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message="No route was found between the start and end points. Error: {e.args[0]}",
+            message=f"No route was found between the start and end points. Error: {e.args}",
         )
 
     # 시작점과 도착점을 최종 경로에 추가
@@ -409,10 +418,112 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         start_point_node = [{"node_id": None, "lat": start_lat, "lon": start_lon}]
         end_point_node = [{"node_id": None, "lat": end_lat, "lon": end_lon}]
         route = start_point_node + result["route"] + end_point_node
+        path = start_point_node + result["path"] + end_point_node
         full_distance = start_dist + result["full_distance"] + end_dist
-        return {"route": route, "full_distance": full_distance}
+        return {"route": route, "path": path, "full_distance": full_distance}
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
             message=(e.args[0]),
         )
+
+
+@https_fn.on_call()
+def generate_custom_token(request: https_fn.CallableRequest):
+    user_id = request.data.get("user_id")
+    if not user_id:
+        raise ValueError("The 'user_id' field is required.")
+
+    try:
+        token = auth.create_custom_token(user_id, {"provider": "kakao"})
+    except Exception as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message="Failed to create custom token.",
+            details=str(e),
+        )
+
+    return {"token": token}
+
+
+class User:
+    def __init__(self, uid: str, attributes: dict):
+        self.uid = uid
+        self.attributes = [value for _, value in attributes.items()]
+
+
+# 클러스터링 진행하는 코드
+@scheduler_fn.on_schedule(schedule="0 0 * * 0", timezone=ZoneInfo("Asia/Seoul"))
+def cluster_users(event: scheduler_fn.ScheduledEvent):
+    users_ref = firestore_client.collection("users")
+
+    docs = users_ref.select(["attributes"]).stream()  # docs는 제너레이터 객체. 좀 큰 데이터에서 받아올 때는 stream으로
+    docs1 = firestore_client.collection("Clusters").get()  # docs1은 리스트 객체. 작은 데이터라 get으로
+
+    Users = [User(doc.id, doc.to_dict()["attributes"]) for doc in docs]
+    Datas = DataFrame.from_dict({user.uid: user.attributes for user in Users}, orient="index")
+    num_users = len(Users)
+
+    # 유저가 하나면 클러스터링을 진행하는 것이 아니라 그냥 그걸로 끝내기
+    if num_users == 0:
+        exit()
+
+    if num_users == 1:
+        users_ref.document(Users[0].uid).update({"label": 0})
+
+        centroid = list(Users[0].attributes)
+        data = {
+            "centroid": centroid,
+        }
+        firestore_client.collection("Clusters").document(str(0)).set(data)
+    elif not docs1:  # 이전에 클러스터링을 한 적이 없으면
+        # N = 16으로 클러스터링
+        kmeans = KMeans(n_clusters=16, init="k-means++", random_state=0).fit(Datas)
+        labels = kmeans.labels_
+        centroids = kmeans.cluster_centers_
+        for i, user in enumerate(Users):
+            users_ref.document(user.uid).update({"label": int(labels[i])})
+        for i, centroid in enumerate(centroids):
+            data = {
+                "centroid": list(centroid),
+            }
+            firestore_client.collection("Clusters").document(str(i)).set(data)
+    else:  # 이전에 클러스터링을 한 적이 있으면 그냥 클러스터링 다시 돌리기
+        docs1_sorted = sorted(docs1, key=lambda x: int(x.id))
+        centroids = [doc.to_dict()["centroid"] for doc in docs1_sorted]  # 이전의 중심점들 정보를 받아오기
+
+        kmeans = KMeans(n_clusters=len(centroids), init=centroids, random_state=0).fit(Datas)
+        labels0 = kmeans.labels_
+        centroids0 = list(kmeans.cluster_centers_)
+
+        for i, user in enumerate(Users):
+            users_ref.document(user.uid).update({"label": int(labels0[i])})
+        for i, centroid in enumerate(centroids0):
+            data = {
+                "centroid": list(centroid),
+            }
+            print(f"document {i} is updated to {data}")
+            firestore_client.collection("Clusters").document(str(i)).set(data)
+
+
+@on_document_updated(document="users/{user_id}", memory=options.MemoryOption.MB_512)
+def assign_label(event) -> None:
+    new_value = event.data.after
+    prev_value = event.data.before
+    if new_value.get("attributes") == prev_value.get("attributes"):
+        return
+
+    user_id = new_value.get("uid")
+    attributes = new_value.get("attributes")
+    # 각 중심점과 거리 비교하여 가장 가까운 중심점의 라벨을 할당
+    clusters_ref = firestore_client.collection("Clusters")
+    docs = clusters_ref.get()
+    min_dist = float("inf")
+    label = -1
+    for doc in docs:
+        dist = sum((a - b) ** 2 for a, b in zip(attributes, doc.to_dict()["centroid"]))
+        if dist < min_dist:
+            min_dist = dist
+            label = doc.id
+
+    firestore_client.collection("users").document(user_id).update({"label": int(label)})
