@@ -28,7 +28,7 @@ class _SearchState extends State<Search> {
   List<Map<String, dynamic>> publicBikes = [];
   Set<NMarker> publicMarkers = {};
 
-  Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
+  final Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
   bool _showMarker = false; // 마커 표시 여부
 
   bool searchToggle = false;
