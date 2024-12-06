@@ -14,6 +14,8 @@ import '../../../utils/providers/page_provider.dart';
 import '../../../utils/providers/preference_provider.dart';
 import '../../../utils/providers/kakao_login_provider.dart';
 
+import 'edit_keyword.dart';
+
 class SurveyResultPage extends StatelessWidget {
   final ScreenshotController screenshotController = ScreenshotController();
   final String resultType;
@@ -68,17 +70,38 @@ class SurveyResultPage extends StatelessWidget {
                         Wrap(
                           spacing: 10,
                           children: preferenceProvider.likes
-                              .map((like) => Chip(label: Text(like)))
+                              .map((like) => Chip(
+                            label: Text(
+                              like,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.green,
+                          ))
                               .toList(),
                         ),
                         Wrap(
                           spacing: 10,
                           children: preferenceProvider.dislikes
-                              .map((dislike) => Chip(label: Text(dislike)))
+                              .map((dislike) => Chip(
+                            label: Text(
+                              dislike,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.red,
+                          ))
                               .toList(),
                         ),
                         TextButton(
-                          onPressed: () async {},
+                          onPressed: () => {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return EditKeywordsPage();
+                                },
+                              ),
+                            )
+                          },
                           child: Text(
                             '취향 키워드 수정하기',
                             style: const TextStyle(

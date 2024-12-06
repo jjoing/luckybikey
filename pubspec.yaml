@@ -87,7 +87,6 @@ flutter:
     - assets/images/survey_result/health.webp
     - assets/images/survey_result/safety.webp
     - assets/images/survey_result/scenery.webp
-    - assets/images/nav_icon.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
