@@ -79,9 +79,7 @@ def heuristic_preference_distance(cur_node: Node, end_node: Node, group_road_typ
     return pref_dist
 
 
-def astar_road_finder(
-    collection_ref: CollectionReference, start_node: Node, end_node: Node, use_sharing=False, user_taste=False, user_group=0, group_preference=[1, 1, 1, 1, 1, 1, 1, 1]
-) -> AStarReturn:
+def astar_road_finder(collection_ref: CollectionReference, start_node: Node, end_node: Node, user_taste: bool, group_preference: List) -> AStarReturn:
     # A* 알고리즘을 사용하여 시작 노드에서 도착 노드까지의 최단 경로 찾기
     open_list: List[Node] = []
     closed_set = set()
@@ -113,7 +111,7 @@ def astar_road_finder(
                     continue
             new_node.g = cur_node.g + inner_dict["distance"]
             if user_taste:
-                new_node.h = heuristic_preference_distance(new_node, end_node, [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0])
+                new_node.h = heuristic_preference_distance(new_node, end_node, inner_dict["attributes"], group_preference)
             else:
                 new_node.h = heuristic_Manhattan_distance(new_node, end_node)
             new_node.f = new_node.g + new_node.h
@@ -180,23 +178,13 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
         start_point = req.data["StartPoint"]
         end_point = req.data["EndPoint"]
-        use_sharing = req.data["UseSharing"]
         user_taste = req.data["UserTaste"]
+        user_group = req.data["UserGroup"]
     except KeyError as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message=(f"Missing argument '{e}' in request data."),
         )
-
-    if use_sharing:
-        try:  # 요청 데이터 파싱
-            start_station = req.data["StartStation"]
-            end_station = req.data["EndStation"]
-        except KeyError as e:
-            raise https_fn.HttpsError(
-                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-                message=(f"Missing argument '{e}' in request data."),
-            )
 
     try:  # 요청 데이터 유효성 검사
         start_lat = start_point["lat"]
@@ -216,24 +204,11 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
             message=(f"Missing argument '{e}' in end point."),
         )
 
-    if use_sharing:
-        try:  # 요청 데이터 유효성 검사
-            start_station_lat = start_station["lat"]
-            start_station_lon = start_station["lon"]
-            end_station_lat = end_station["lat"]
-            end_station_lon = end_station["lon"]
-        except KeyError as e:
-            raise https_fn.HttpsError(
-                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-                message=(f"Missing argument '{e}' in station point."),
-            )
-
     try:  # 요청 데이터 타입 변환
         start_lat = float(start_lat)
         start_lon = float(start_lon)
         end_lat = float(end_lat)
         end_lon = float(end_lon)
-        use_sharing = bool(use_sharing)
         user_taste = bool(user_taste)
     except ValueError as e:
         raise https_fn.HttpsError(
@@ -241,20 +216,9 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
             message=(e.args[0]),
         )
 
-    if use_sharing:
-        try:  # 요청 데이터 타입 변환
-            start_station_lat = float(start_station_lat)
-            start_station_lon = float(start_station_lon)
-            end_station_lat = float(end_station_lat)
-            end_station_lon = float(end_station_lon)
-        except ValueError as e:
-            raise https_fn.HttpsError(
-                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-                message=(e.args[0]),
-            )
-
     try:  # 노드 맵 생성
         collection_ref = firestore_client.collection("map_data_v2")
+        group_preference = firestore_client.collection("Clusters").document(user_group).get().to_dict()["centroid"]
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -270,16 +234,6 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
             message=f"No nodes near the start point were found. Error: {e.args[0]}",
         )
 
-    if use_sharing:
-        try:  # 공유 자전거 대여소에서 가장 가까운 노드 찾기
-            nearest_start_station_id, start_station_dist = get_nearest_node(collection_ref, start_station_lat, start_station_lon)
-            nearest_start_station = create_node(collection_ref, nearest_start_station_id)
-        except Exception as e:
-            raise https_fn.HttpsError(
-                code=https_fn.FunctionsErrorCode.INTERNAL,
-                message=f"No nodes near the start station were found. Error: {e.args[0]}",
-            )
-
     try:  # 도착점에서 가장 가까운 노드 찾기
         nearest_end_node_id, end_dist = get_nearest_node(collection_ref, end_lat, end_lon)
         nearest_end_node = create_node(collection_ref, nearest_end_node_id)
@@ -289,35 +243,13 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
             message=f"No nodes near the end point were found. Error: {e.args[0]}",
         )
 
-    if use_sharing:
-        try:  # 공유 자전거 반납소에서 가장 가까운 노드 찾기
-            nearest_end_station_id, end_station_dist = get_nearest_node(collection_ref, end_station_lat, end_station_lon)
-            nearest_end_station = create_node(collection_ref, nearest_end_station_id)
-        except Exception as e:
-            raise https_fn.HttpsError(
-                code=https_fn.FunctionsErrorCode.INTERNAL,
-                message=f"No nodes near the end station were found. Error: {e.args[0]}",
-            )
-
     try:  # 시작노드-도착노드 길찾기
-        node_dict = {nearest_start_node_id: nearest_start_node, nearest_end_node_id: nearest_end_node}
-        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node)
+        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node, user_taste=user_taste, group_preference=[])
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
             message=f"No route was found between the start and end points. Error: {e.args[0]}",
         )
-
-    if use_sharing:
-        try:  # 공유 자전거 대여소-반납소 길찾기
-            node_dict = {nearest_start_station_id: nearest_start_station, nearest_end_station_id: nearest_end_station}
-            result_start_station = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_start_station)
-            result_end_station = astar_road_finder(collection_ref, start_node=nearest_end_station, end_node=nearest_end_node)
-        except Exception as e:
-            raise https_fn.HttpsError(
-                code=https_fn.FunctionsErrorCode.INTERNAL,
-                message=f"No route was found between the start and end stations. Error: {e.args[0]}",
-            )
 
     # 시작점과 도착점을 최종 경로에 추가
     try:
@@ -339,8 +271,8 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
         start_point = req.data["StartPoint"]
         end_point = req.data["EndPoint"]
-        use_sharing = req.data["UseSharing"]
         user_taste = req.data["UserTaste"]
+        user_group = req.data["UserGroup"]
     except KeyError as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
@@ -370,7 +302,6 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         start_lon = float(start_lon)
         end_lat = float(end_lat)
         end_lon = float(end_lon)
-        use_sharing = bool(use_sharing)
         user_taste = bool(user_taste)
     except ValueError as e:
         raise https_fn.HttpsError(
@@ -380,6 +311,7 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
 
     try:  # 노드 맵 생성
         collection_ref = firestore_client.collection("map_data_songdo")
+        group_preference = firestore_client.collection("Clusters").document(user_group).get().to_dict()["centroid"]
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -405,8 +337,7 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 시작노드-도착노드 길찾기
-        node_dict = {nearest_start_node_id: nearest_start_node, nearest_end_node_id: nearest_end_node}
-        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node)
+        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node, user_taste=user_taste, group_preference=group_preference)
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -428,19 +359,22 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
 
-@https_fn.on_call()
+@https_fn.on_call(memory=options.MemoryOption.MB_512)
 def generate_custom_token(request: https_fn.CallableRequest):
-    user_id = request.data.get("user_id")
-    if not user_id:
-        raise ValueError("The 'user_id' field is required.")
+    try:
+        user_id = request.data["token"]
+    except Exception as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=f"Missing argument 'user_id' in request data. {e}",
+        )
 
     try:
-        token = auth.create_custom_token(user_id, {"provider": "kakao"})
+        token = auth.create_custom_token(user_id).decode("utf-8")
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message="Failed to create custom token.",
-            details=str(e),
+            message=f"Failed to create custom token. {e}",
         )
 
     return {"token": token}
@@ -453,7 +387,7 @@ class User:
 
 
 # 클러스터링 진행하는 코드
-@scheduler_fn.on_schedule(schedule="0 0 * * 0", timezone=ZoneInfo("Asia/Seoul"))
+@scheduler_fn.on_schedule(schedule="0 0 * * 0", timezone=ZoneInfo("Asia/Seoul"), memory=options.MemoryOption.MB_512)
 def cluster_users(event: scheduler_fn.ScheduledEvent):
     users_ref = firestore_client.collection("users")
 
