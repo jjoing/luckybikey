@@ -38,6 +38,11 @@ Our problem statement is that when we use bicycles as transportation, the user i
 - [shared_preferences](https://pub.dev/packages/shared_preferences)
 - [permission_handler](https://pub.dev/packages/permission_handler)
 - [kakao_flutter_sdk](https://pub.dev/packages/kakado_flutter_sdk)
+- [screenshot](https://pub.dev/packages/screenshot)
+- [path_provider](https://pub.dev/packages/path_provider)
+- [image_gallery_saver](https://pub.dev/packages/image_gallery_saver)
+- [url_launcher](https://pub.dev/packages/url_launcher)
+- [geolocator](https://pub.dev/packages/geolocator)
 
 
 

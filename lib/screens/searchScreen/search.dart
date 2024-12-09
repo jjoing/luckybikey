@@ -1,23 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
-import '../../screens/searchScreen/modal.dart';
-import '../../contents/way_sample_data.dart';
-import '../../utils/mapAPI.dart';
+import 'modal.dart';
+import 'navigation.dart';
+import 'navigation_utils.dart';
 import '../../components/bottomNaviBar.dart';
-import '../../screens/searchScreen/navigation.dart';
-
-enum TtsState { playing, stopped, paused, continued }
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -26,97 +17,25 @@ class Search extends StatefulWidget {
   State<Search> createState() => _SearchState();
 }
 
-Future<Map<String, dynamic>> _request_route(req) async {
-  final results =
-      await FirebaseFunctions.instance.httpsCallable('request_route').call(req);
-
-  List<Map<String, dynamic>> route =
-      List<Map<String, dynamic>>.from(results.data['route'].map((point) {
-    return {
-      "NLatLng": NLatLng(point['lat'], point['lon']),
-      "distance": point['distance']
-    };
-  }));
-
-  List<Map<String, dynamic>> route_info = [];
-
-  for (var i = 0; i < route.length - 2; i++) {
-    final Map<String, dynamic> current_node = route[i];
-    final Map<String, dynamic> next_node = route[i + 1];
-    final Map<String, dynamic> next_next_node = route[i + 2];
-
-    final link1 = [
-      next_node["NLatLng"].longitude - current_node["NLatLng"].longitude,
-      next_node["NLatLng"].latitude - current_node["NLatLng"].latitude,
-      0.0,
-    ];
-    final link1_norm = sqrt(pow(link1[0], 2) + pow(link1[1], 2));
-    final link2 = [
-      next_next_node["NLatLng"].longitude - next_node["NLatLng"].longitude,
-      next_next_node["NLatLng"].latitude - next_node["NLatLng"].latitude,
-      0.0,
-    ];
-    final link2_norm = sqrt(pow(link2[0], 2) + pow(link2[1], 2));
-    final cross_product = [
-      link1[1] * link2[2] - link1[2] * link2[1],
-      link1[2] * link2[0] - link1[0] * link2[2],
-      link1[0] * link2[1] - link1[1] * link2[0],
-    ];
-    final dot_product =
-        link1[0] * link2[0] + link1[1] * link2[1] + link1[2] * link2[2];
-    route_info.add({
-      "NLatLng": current_node["NLatLng"],
-      "distance": next_node['distance'],
-      "isleft": cross_product[2] > 0,
-      "angle": acos(dot_product / (link1_norm * link2_norm)) * 180 / pi,
-    });
-  }
-  route_info.add({
-    "NLatLng": route[route.length - 2]["NLatLng"],
-    "distance": route[route.length - 1]['distance'],
-    "isleft": null,
-    "angle": null,
-  });
-  route_info.add({
-    "NLatLng": route[route.length - 1]["NLatLng"],
-    "distance": null,
-    "isleft": null,
-    "angle": null,
-  });
-
-  return {"route": route_info, "full_distance": results.data['full_distance']};
-}
-
-Future<List<Map<String, dynamic>>> _search_request(req) async {
-  String query = req['query'];
-  final results = await http.get(
-    Uri.parse(
-        'https://openapi.naver.com/v1/search/local.json?query=$query&display=100&start=1&sort=random'),
-    headers: {
-      "X-Naver-Client-Id": client_id,
-      "X-Naver-Client-Secret": client_secret,
-    },
-  );
-  List<Map<String, dynamic>> result = List<Map<String, dynamic>>.from(
-      jsonDecode(results.body)['items'].map((item) {
-    return {
-      "title": item['title'].replaceAll(RegExp(r'<[^>]*>'), ''),
-      "link": item['link'],
-      "category": item['category'],
-      "description": item['description'],
-      "telephone": item['telephone'],
-      "address": item['address'],
-      "roadAddress": item['roadAddress'],
-      "NLatLng": NLatLng(
-          double.parse(item['mapy']) / 10e6, double.parse(item['mapx']) / 10e6),
-      "mapx": double.parse(item['mapx']) / 10e6,
-      "mapy": double.parse(item['mapy']) / 10e6,
-    };
-  }));
-  return result;
-}
-
 class _SearchState extends State<Search> {
+  final FlutterTts tts = FlutterTts();
+  NaverMapController? ct;
+
+  List<Map<String, dynamic>> route = [];
+  double fullDistance = 0.0;
+  List<Map<String, dynamic>> searchResult = [{}, {}];
+  List<Map<String, dynamic>> searchSuggestions = [];
+  List<Map<String, dynamic>> publicBikes = [];
+  Set<NMarker> publicMarkers = {};
+
+  final Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
+  bool _showMarker = false; // 마커 표시 여부
+
+  bool searchToggle = false;
+  int searchIndex = 0;
+  NLatLng cameraPosition = const NLatLng(37.525313, 126.9226753);
+  double cameraZoom = 12.0;
+
   void _permission() async {
     var requestStatus = await Permission.location.request();
     var status = await Permission.location.status;
@@ -124,8 +43,6 @@ class _SearchState extends State<Search> {
       openAppSettings();
     }
   }
-
-  final FlutterTts tts = FlutterTts();
 
   @override
   void initState() {
@@ -137,25 +54,9 @@ class _SearchState extends State<Search> {
     tts.setPitch(1); //음높이(0.5~2.0)
   }
 
-  List<NLatLng> sampleData2Coords = Sample_Data_2.map((point) {
-    return NLatLng(point['lat'], point['lon']);
-  }).toList();
-
-  List<Map<String, dynamic>> route = [];
-  List<Map<String, dynamic>> searchResult = [{}, {}];
-  List<Map<String, dynamic>> searchSuggestions = [];
-
-  Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
-  bool _showMarker = false; // 마커 표시 여부
-  bool _showPath = false; // 경로 표시 여부
-
-  var txt_start = TextEditingController();
-  var txt_end = TextEditingController();
-
   @override
   Widget build(BuildContext context) {
     final Completer<NaverMapController> mapControllerCompleter = Completer();
-
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -191,11 +92,11 @@ class _SearchState extends State<Search> {
                                 },
                                 textInputAction: TextInputAction.go,
                                 onSubmitted: (value) async {
-                                  await _search_request({"query": value}).then(
+                                  await searchRequest({"query": value}).then(
                                       (result) {
                                     setState(() {
-                                      _mapKey = UniqueKey();
                                       searchSuggestions = result;
+                                      searchToggle = true;
                                     });
                                     controller.openView();
                                   }, onError: (error, stackTrace) {
@@ -224,12 +125,19 @@ class _SearchState extends State<Search> {
                                     ),
                                     onTap: () {
                                       setState(() {
-                                        _mapKey = UniqueKey();
                                         searchResult[0] =
                                             searchSuggestions[index];
-                                        controller.closeView(
-                                            searchSuggestions[index]['title']);
                                       });
+                                      ct?.updateCamera(NCameraUpdate.withParams(
+                                        target: searchResult[0]['NLatLng'],
+                                        zoom: 15.0,
+                                      ));
+                                      ct?.addOverlay(NMarker(
+                                        id: 'startMarker',
+                                        position: searchResult[0]['NLatLng'],
+                                      ));
+                                      controller.closeView(
+                                          searchSuggestions[index]['title']);
                                     },
                                   );
                                 },
@@ -253,11 +161,11 @@ class _SearchState extends State<Search> {
                                 },
                                 textInputAction: TextInputAction.go,
                                 onSubmitted: (value) async {
-                                  await _search_request({"query": value}).then(
+                                  await searchRequest({"query": value}).then(
                                       (result) {
                                     setState(() {
-                                      _mapKey = UniqueKey();
                                       searchSuggestions = result;
+                                      searchToggle = true;
                                     });
                                     controller.openView();
                                   }, onError: (error, stackTrace) {
@@ -286,12 +194,19 @@ class _SearchState extends State<Search> {
                                     ),
                                     onTap: () {
                                       setState(() {
-                                        _mapKey = UniqueKey();
                                         searchResult[1] =
                                             searchSuggestions[index];
-                                        controller.closeView(
-                                            searchSuggestions[index]['title']);
                                       });
+                                      ct?.updateCamera(NCameraUpdate.withParams(
+                                        target: searchResult[1]['NLatLng'],
+                                        zoom: 15.0,
+                                      ));
+                                      ct?.addOverlay(NMarker(
+                                        id: 'endMarker',
+                                        position: searchResult[1]['NLatLng'],
+                                      ));
+                                      controller.closeView(
+                                          searchSuggestions[index]['title']);
                                     },
                                   );
                                 },
@@ -305,16 +220,6 @@ class _SearchState extends State<Search> {
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           onPressed: () => {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return Navigation(
-                                  route: route,
-                                  start: searchResult[0],
-                                  end: searchResult[1],
-                                );
-                              },
-                            ),
                             if (searchResult[0].isEmpty ||
                                 searchResult[1].isEmpty)
                               {
@@ -331,16 +236,18 @@ class _SearchState extends State<Search> {
                             else
                               {
                                 tts.speak("안내를 시작합니다."),
-                                // showDialog(
-                                //   context: context,
-                                //   builder: (BuildContext context) {
-                                //     return Navigation(
-                                //       route: route,
-                                //       start: searchResult[0],
-                                //       end: searchResult[1],
-                                //     );
-                                //   },
-                                // ),
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return Navigation(
+                                      route: route,
+                                      fullDistance: fullDistance,
+                                      start: searchResult[0],
+                                      end: searchResult[1],
+                                      tts: tts,
+                                    );
+                                  },
+                                ),
                               }
                           },
                           icon: const Icon(Icons.swap_vert),
@@ -351,38 +258,38 @@ class _SearchState extends State<Search> {
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           onPressed: () {
-                            // 버튼을 눌렀을 때 _showPath 상태를 토글하고 지도를 리로드
-                            setState(() {
-                              _mapKey = UniqueKey();
-                              _showPath = !_showPath; // 상태를 토글하여 경로 표시 여부 변경
-                            });
-                            tts.speak("경로를 찾는 중입니다.");
-                            print("speak");
+                            route = [];
                             if (searchResult[0].isEmpty ||
                                 searchResult[1].isEmpty) {
-                              print("searchResult is empty");
-                              return;
-                            }
-                            _request_route({
-                              "StartPoint": {
-                                "lat": searchResult[0]['mapy'],
-                                "lon": searchResult[0]['mapx']
-                              },
-                              "EndPoint": {
-                                "lat": searchResult[1]['mapy'],
-                                "lon": searchResult[1]['mapx']
-                              },
-                              "UseSharing": false,
-                              "UserTaste": false,
-                            }).then((result) {
-                              setState(() {
-                                print("request_route done");
-                                _mapKey = UniqueKey();
-                                route = result['route'];
+                              tts.speak("출발지와 도착지를 입력해주세요.");
+                              print("출발지와 도착지를 입력해주세요.");
+                            } else {
+                              tts.speak("경로를 찾는 중입니다.");
+                              print("경로를 찾는 중입니다.");
+                              searchRoute(
+                                      searchResult, _showMarker, publicBikes)
+                                  .then((result) {
+                                setState(() {
+                                  route = result['route'];
+                                  fullDistance = result['full_distance'];
+                                });
+                                ct?.updateCamera(NCameraUpdate.fitBounds(
+                                  NLatLngBounds.from(
+                                      route.map((e) => e["NLatLng"])),
+                                  padding: const EdgeInsets.all(50),
+                                ));
+                                ct?.addOverlay(NPathOverlay(
+                                  id: 'routePath',
+                                  coords: List<NLatLng>.from(route.map((e) =>
+                                      e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
+                                  color: Colors.lightGreen,
+                                  width: 5,
+                                ));
+                              }, onError: (error, stackTrace) {
+                                tts.speak("경로를 찾을 수 없습니다.");
+                                print(error);
                               });
-                            }, onError: (error, stackTrace) {
-                              print(error);
-                            });
+                            }
                           },
                           icon: const Icon(Icons.search),
                         ),
@@ -405,51 +312,13 @@ class _SearchState extends State<Search> {
                         activeLayerGroups: [
                           NLayerGroup.bicycle,
                         ],
-                        initialCameraPosition: NCameraPosition(
-                          target: NLatLng(37.525313, 126.9226753),
-                          zoom: 12,
-                          bearing: 0,
-                          tilt: 0,
-                        ),
                         locationButtonEnable: true,
                         contentPadding: EdgeInsets.all(10),
                       ),
                       forceGesture: true,
                       onMapReady: (controller) {
                         mapControllerCompleter.complete(controller);
-
-                        // _showPath 상태에 따라 경로 오버레이 추가
-                        if (_showPath) {
-                          final path2 = NPathOverlay(
-                            id: 'samplePath3',
-                            coords: List<NLatLng>.from(route.map(
-                                (e) => e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
-                            color: Colors.lightGreen,
-                            width: 5,
-                          );
-                          controller.addOverlay(path2);
-                        }
-
-                        // _showMarker 상태에 따라 마커 추가
-                        if (_showMarker) {
-                          const LatLng1 = NLatLng(37.525313, 126.9226753);
-                          final marker = NMarker(
-                            id: 'testMarker',
-                            position: LatLng1, // 마커 위치
-                          );
-                          controller.addOverlay(marker);
-                        }
-
-                        for (var i = 0; i < searchResult.length; i++) {
-                          if (searchResult[i].isEmpty) {
-                            continue;
-                          }
-                          final marker = NMarker(
-                            id: 'testMarker$i',
-                            position: searchResult[i]['NLatLng'],
-                          );
-                          controller.addOverlay(marker);
-                        }
+                        ct = controller;
                       },
                     ),
                   ),
@@ -464,11 +333,36 @@ class _SearchState extends State<Search> {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   onPressed: () {
-                    // 버튼을 눌렀을 때 _showMarker 상태를 토글하고 지도를 리로드
-                    setState(() {
-                      _mapKey = UniqueKey();
-                      _showMarker = !_showMarker; // 상태를 토글하여 마커 표시 여부 변경
-                    });
+                    if (publicBikes.isEmpty) {
+                      pulicBike().then((result) {
+                        setState(() {
+                          publicBikes = result;
+                          _showMarker = true;
+                        });
+                      }, onError: (error) {
+                        print(error);
+                      });
+                    } else {
+                      setState(() {
+                        _showMarker = !_showMarker;
+                      });
+                    }
+                    if (_showMarker) {
+                      ct?.getContentBounds().then((bounds) {
+                        for (var i = 0; i < publicBikes.length; i++) {
+                          if (bounds.containsPoint(publicBikes[i]['NLatLng'])) {
+                            publicMarkers.add(NMarker(
+                              id: publicBikes[i]['StationId'],
+                              position: publicBikes[i]['NLatLng'],
+                              size: const NSize(15, 15),
+                            ));
+                          }
+                        }
+                        ct?.addOverlayAll(publicMarkers);
+                      });
+                    } else {
+                      ct?.clearOverlays();
+                    }
                   },
                   icon: Image.asset('assets/images/share_bike_logo.jpeg'),
                 ),

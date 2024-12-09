@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
+import '../../utils/providers/page_provider.dart';
+
 import 'searchScreen/search.dart';
 import 'profileScreen/profile.dart';
-import '../../utils/providers/page_provider.dart';
 import 'profileScreen/preference_survey/intro.dart';
 
 
@@ -184,7 +185,7 @@ class HomeContent extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   ),
                   onPressed: () {
-                    pageProvider.setPage(2); // profile 페이지로 이동
+                    pageProvider.setPage(2);// profile 페이지로 이동
                   },
                   child: const Text(
                     "Go to Profile",
