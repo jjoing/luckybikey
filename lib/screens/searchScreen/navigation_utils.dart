@@ -329,8 +329,8 @@ Future<List<Map<String, dynamic>>> pulicBike() async {
 
 //길찾기 3번 연결하기
 
-Future<List<Map<String, dynamic>>> searchRoute(
-    searchResult, usePublicBike, publicBikes, firestore, authentication) async {
+void searchRoute(searchResult, usePublicBike, publicBikes, firestore,
+    authentication, routeSelectorProvider) async {
   String userGroup = await firestore
       .collection('users')
       .doc(authentication.currentUser!.uid)
@@ -358,7 +358,7 @@ Future<List<Map<String, dynamic>>> searchRoute(
       "UserTaste": false,
       "UserGroup": userGroup,
       "GroupPreference": groupPreference,
-    });
+    }, routeSelectorProvider);
     final fromStationResults = await _requestRoute({
       "StartPoint": {
         "lat": startStation['NLatLng'].latitude,
@@ -371,7 +371,7 @@ Future<List<Map<String, dynamic>>> searchRoute(
       "UserTaste": false,
       "UserGroup": userGroup,
       "GroupPreference": groupPreference,
-    });
+    }, routeSelectorProvider);
     final toEndResults = await _requestRoute({
       "StartPoint": {
         "lat": endStation['NLatLng'].latitude,
@@ -384,8 +384,7 @@ Future<List<Map<String, dynamic>>> searchRoute(
       "UserTaste": false,
       "UserGroup": userGroup,
       "GroupPreference": groupPreference,
-    });
-    return [{}, {}];
+    }, routeSelectorProvider);
 
     // // 모든 route 정보 합치기
     // List<List<Map<String, dynamic>>> combinedRoute = [
@@ -416,9 +415,7 @@ Future<List<Map<String, dynamic>>> searchRoute(
       "UserTaste": false,
       "UserGroup": userGroup,
       "GroupPreference": groupPreference,
-    });
-
-    return results;
+    }, routeSelectorProvider);
   }
 }
 
@@ -450,33 +447,81 @@ Map<String, dynamic> _getClosestPublicBikeStation(
   return nearestStation;
 }
 
-Future<List<Map<String, dynamic>>> _requestRoute(req) async {
-  final List<Map<String, dynamic>> calls = List.generate(8, (index) {
-    final List<double> groupPrefernce = List<double>.generate(8, (i) {
-      if (i == index) {
-        return req['GroupPreference'][i];
-      } else {
-        return 0.0;
-      }
-    });
-    return {
-      "Index": index + 2,
-      "StartPoint": {
-        "lat": req['StartPoint']['lat'],
-        "lon": req['StartPoint']['lon']
-      },
-      "EndPoint": {
-        "lat": req['EndPoint']['lat'],
-        "lon": req['EndPoint']['lon']
-      },
-      "UserTaste": true,
-      "UserGroup": req['UserGroup'],
-      "GroupPreference": groupPrefernce,
-    };
-  });
-  // All preferences route
-  calls.insert(0, {
-    "Index": 1,
+Future<List<Map<String, dynamic>>> _requestRoute(
+    req, routeSelectorProvider) async {
+  // final List<Map<String, dynamic>> calls = List.generate(8, (index) {
+  //   final List<double> groupPrefernce = List<double>.generate(8, (i) {
+  //     if (i == index) {
+  //       return req['GroupPreference'][i];
+  //     } else {
+  //       return 0.0;
+  //     }
+  //   });
+  //   return {
+  //     "Index": index + 2,
+  //     "StartPoint": {
+  //       "lat": req['StartPoint']['lat'],
+  //       "lon": req['StartPoint']['lon']
+  //     },
+  //     "EndPoint": {
+  //       "lat": req['EndPoint']['lat'],
+  //       "lon": req['EndPoint']['lon']
+  //     },
+  //     "UserTaste": true,
+  //     "UserGroup": req['UserGroup'],
+  //     "GroupPreference": groupPrefernce,
+  //   };
+  // });
+  // // All preferences route
+  // calls.insert(0, {
+  //   "Index": 1,
+  //   "StartPoint": {
+  //     "lat": req['StartPoint']['lat'],
+  //     "lon": req['StartPoint']['lon'],
+  //   },
+  //   "EndPoint": {
+  //     "lat": req['EndPoint']['lat'],
+  //     "lon": req['EndPoint']['lon'],
+  //   },
+  //   "UserTaste": true,
+  //   "UserGroup": req['UserGroup'],
+  //   "GroupPreference": req['GroupPreference'],
+  // });
+  // // Fastest route
+  // calls.insert(0, {
+  //   "Index": 0,
+  //   "StartPoint": {
+  //     "lat": req['StartPoint']['lat'],
+  //     "lon": req['StartPoint']['lon'],
+  //   },
+  //   "EndPoint": {
+  //     "lat": req['EndPoint']['lat'],
+  //     "lon": req['EndPoint']['lon'],
+  //   },
+  //   "UserTaste": false,
+  //   "UserGroup": req['UserGroup'],
+  //   "GroupPreference": req['GroupPreference'],
+  // });
+
+  // print([calls[0]]);
+
+  // List<Map<String, dynamic>> resultRoute = [
+  //   {},
+  //   {},
+  //   {},
+  //   {},
+  //   {},
+  //   {},
+  //   {},
+  //   {},
+  //   {},
+  //   {}
+  // ];
+
+  final List<Map<String, dynamic>> calls = [];
+  // 자전거 길
+  calls.add({
+    "Index": 4,
     "StartPoint": {
       "lat": req['StartPoint']['lat'],
       "lon": req['StartPoint']['lon'],
@@ -487,11 +532,62 @@ Future<List<Map<String, dynamic>>> _requestRoute(req) async {
     },
     "UserTaste": true,
     "UserGroup": req['UserGroup'],
-    "GroupPreference": req['GroupPreference'],
+    "GroupPreference": List<double>.generate(8, (i) {
+      if (i == 7) {
+        return req['GroupPreference'][i];
+      } else {
+        return 0.0;
+      }
+    }),
   });
+
+  // 큰 길
+  calls.add({
+    "Index": 3,
+    "StartPoint": {
+      "lat": req['StartPoint']['lat'],
+      "lon": req['StartPoint']['lon'],
+    },
+    "EndPoint": {
+      "lat": req['EndPoint']['lat'],
+      "lon": req['EndPoint']['lon'],
+    },
+    "UserTaste": true,
+    "UserGroup": req['UserGroup'],
+    "GroupPreference": List<double>.generate(8, (i) {
+      if (i == 1 || i == 6) {
+        return req['GroupPreference'][i];
+      } else {
+        return 0.0;
+      }
+    }),
+  });
+
+  // 풍경 좋은 경로
+  calls.add({
+    "Index": 2,
+    "StartPoint": {
+      "lat": req['StartPoint']['lat'],
+      "lon": req['StartPoint']['lon'],
+    },
+    "EndPoint": {
+      "lat": req['EndPoint']['lat'],
+      "lon": req['EndPoint']['lon'],
+    },
+    "UserTaste": true,
+    "UserGroup": req['UserGroup'],
+    "GroupPreference": List<double>.generate(8, (i) {
+      if (i == 0) {
+        return req['GroupPreference'][i];
+      } else {
+        return 0.0;
+      }
+    }),
+  });
+
   // Fastest route
   calls.insert(0, {
-    "Index": 0,
+    "Index": 1,
     "StartPoint": {
       "lat": req['StartPoint']['lat'],
       "lon": req['StartPoint']['lon'],
@@ -505,7 +601,21 @@ Future<List<Map<String, dynamic>>> _requestRoute(req) async {
     "GroupPreference": req['GroupPreference'],
   });
 
-  print([calls[0]]);
+  // All preferences route
+  calls.insert(0, {
+    "Index": 0,
+    "StartPoint": {
+      "lat": req['StartPoint']['lat'],
+      "lon": req['StartPoint']['lon'],
+    },
+    "EndPoint": {
+      "lat": req['EndPoint']['lat'],
+      "lon": req['EndPoint']['lon'],
+    },
+    "UserTaste": true,
+    "UserGroup": req['UserGroup'],
+    "GroupPreference": req['GroupPreference'],
+  });
 
   List<Map<String, dynamic>> resultRoute = [
     {},
@@ -513,19 +623,15 @@ Future<List<Map<String, dynamic>>> _requestRoute(req) async {
     {},
     {},
     {},
-    {},
-    {},
-    {},
-    {},
-    {}
   ];
 
-  await Future.forEach([calls[0]], (call) async {
+  await Future.forEach(calls, (call) async {
     // Remove [calls[0]] to use all preferences route
     final results = await FirebaseFunctions.instance
         .httpsCallable('request_route_debug')
         .call(call);
-    resultRoute[call["Index"]] = {
+    print('results ${call['Index']}: ${results.data['full_distance']}');
+    routeSelectorProvider.setRoute({
       "route": _preprocessRoute(
         List<Map<String, dynamic>>.from(
           results.data['path'].map((point) {
@@ -537,7 +643,7 @@ Future<List<Map<String, dynamic>>> _requestRoute(req) async {
         ),
       ),
       "full_distance": results.data['full_distance'],
-    };
+    }, call['Index']);
   });
 
   return resultRoute;
