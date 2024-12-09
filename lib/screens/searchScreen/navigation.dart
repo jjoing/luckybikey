@@ -11,19 +11,13 @@ import 'navigation_utils.dart';
 class Navigation extends StatefulWidget {
   const Navigation({
     Key? key,
-    required this.route,
-    required this.fullDistance,
-    required this.start,
-    required this.end,
+    required this.routeInfo,
     required this.tts,
     required this.firestore,
     required this.authentication,
   }) : super(key: key);
 
-  final List<Map<String, dynamic>> route;
-  final double fullDistance;
-  final Map<String, dynamic> start;
-  final Map<String, dynamic> end;
+  final Map<String, dynamic> routeInfo;
   final FlutterTts tts;
   final FirebaseFirestore firestore;
   final FirebaseAuth authentication;
@@ -49,12 +43,12 @@ class _NavigationState extends State<Navigation> {
     super.initState();
 
     navState = {
-      'Route': widget.route,
-      "Start": widget.start,
-      "End": widget.end,
+      'Route': widget.routeInfo['route'],
+      "Start": widget.routeInfo['route'][0],
+      "End": widget.routeInfo['route'][widget.routeInfo['route'].length - 1],
       "CurrentPosition": {
-        "latitude": widget.start["NLatLng"].latitude,
-        "longitude": widget.start["NLatLng"].longitude
+        "latitude": widget.routeInfo['route'][0]["NLatLng"].latitude,
+        "longitude": widget.routeInfo['route'][0]["NLatLng"].longitude
       },
       "CurrentIndex": 0,
       "ProjectedPosition": {},
@@ -109,7 +103,7 @@ class _NavigationState extends State<Navigation> {
             context: context,
             builder: (BuildContext context) {
               return Navigationend(
-                  fullDistance: widget.fullDistance,
+                  fullDistance: widget.routeInfo['full_distance'],
                   tick: t.tick.toDouble(),
                   firestore: widget.firestore,
                   authentication: widget.authentication);
@@ -131,13 +125,14 @@ class _NavigationState extends State<Navigation> {
             options: NaverMapViewOptions(
               mapType: NMapType.navi,
               initialCameraPosition: NCameraPosition(
-                target: widget.start['NLatLng'], // NLatLng로 변환된 출발지 좌표
+                target: widget.routeInfo['route'][0]
+                    ['NLatLng'], // NLatLng로 변환된 출발지 좌표
                 zoom: 17,
                 bearing: calculateBearing(
-                  widget.start['NLatLng'].latitude,
-                  widget.start['NLatLng'].longitude,
-                  widget.route[1]['NLatLng'].latitude,
-                  widget.route[1]['NLatLng'].longitude,
+                  widget.routeInfo['route'][0]['NLatLng'].latitude,
+                  widget.routeInfo['route'][0]['NLatLng'].longitude,
+                  widget.routeInfo['route'][1]['NLatLng'].latitude,
+                  widget.routeInfo['route'][1]['NLatLng'].longitude,
                 ),
                 tilt: 45,
               ),
@@ -161,7 +156,7 @@ class _NavigationState extends State<Navigation> {
               // ct?.setLocationTrackingMode(NLocationTrackingMode.follow);
               final path1 = NPathOverlay(
                 id: 'route',
-                coords: List<NLatLng>.from(widget.route
+                coords: List<NLatLng>.from(widget.routeInfo['route']
                     .map((e) => e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
                 color: const Color.fromARGB(255, 119, 201, 27),
                 width: 5,

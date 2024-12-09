@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:luckybiky/utils/providers/route_selector_provider.dart';
 import 'firebase_options.dart';
 
 import 'package:animated_splash_screen/animated_splash_screen.dart';
@@ -20,7 +21,6 @@ import 'screens/searchScreen/search.dart';
 import 'screens/profileScreen/profile.dart';
 import 'utils/login/login.dart';
 import 'utils/login/kakao_login.dart';
-
 
 void main() async {
   await _initialize();
@@ -41,6 +41,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PageProvider()),
         ChangeNotifierProvider(create: (_) => PreferenceProvider()),
         ChangeNotifierProvider(create: (_) => KakaoLoginProvider()),
+        ChangeNotifierProvider(create: (_) => RouteSelectorProvider()),
       ],
       child: SplashScreen(),
     ),
@@ -51,8 +52,7 @@ Future<void> _initialize() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NaverMapSdk.instance.initialize(
       clientId: map_id,
-      onAuthFailed: (e) => log("네이버맵 인증오류 : $e", name: "onAuthFailed")
-  );
+      onAuthFailed: (e) => log("네이버맵 인증오류 : $e", name: "onAuthFailed"));
 }
 
 class SplashScreen extends StatelessWidget {
