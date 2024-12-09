@@ -158,14 +158,16 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
               Expanded(
                 child: DragTarget<String>(
                   onWillAccept: (data) {
-                    // 해당 키워드가 추가 가능한 키워드에 있을 경우 수락
-                    return availableKeywords.contains(data) ||
-                        (!keywords.contains(data) &&
-                            allKeywords.any((e) =>
-                            e["keyword"] == data &&
-                                e["type"] == (title == '좋아요!' ? "like" : "dislike")));
+                    // 추가 가능한 키워드인지 확인
+                    return data != null &&
+                        allKeywords.any((e) =>
+                        e["keyword"] == data &&
+                            e["type"] ==
+                                (title == '좋아요!' ? "like" : "dislike"));
                   },
-                  onAccept: onAdd,
+                  onAccept: (data) {
+                    onAdd(data);
+                  },
                   builder: (context, candidateData, rejectedData) {
                     return Wrap(
                       spacing: 10,
@@ -174,7 +176,8 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
                         label: Text(keyword),
                         backgroundColor: color,
                         labelStyle: TextStyle(color: Colors.white),
-                        deleteIcon: Icon(Icons.close, color: Colors.white),
+                        deleteIcon:
+                        Icon(Icons.close, color: Colors.white),
                         onDeleted: () => onRemove(keyword),
                       ))
                           .toList(),
