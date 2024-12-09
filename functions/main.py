@@ -53,7 +53,7 @@ class Node:
 def heuristic_Manhattan_distance(cur_node: Node, end_node: Node) -> float:
     # 현재 노드에서 목표 노드까지의 맨하탄 거리 계산
     mid_location = (cur_node.lat, end_node.lon)
-    manhattan_dist = distance((cur_node.lat, cur_node.lon), mid_location).m + distance(mid_location, (end_node.lat, end_node.lon)).meters
+    manhattan_dist = distance((cur_node.lat, cur_node.lon), (end_node.lat, end_node.lon)).meters
     return manhattan_dist
 
 
@@ -79,7 +79,7 @@ def heuristic_preference_distance(cur_node: Node, end_node: Node, group_road_typ
     return pref_dist
 
 
-def astar_road_finder(collection_ref: CollectionReference, start_node: Node, end_node: Node, user_taste: bool, group_preference: List) -> AStarReturn:
+def astar_road_finder(collection_ref: CollectionReference, start_node: Node, end_node: Node, user_taste: bool, user_group: str, group_preference: List) -> AStarReturn:
     # A* 알고리즘을 사용하여 시작 노드에서 도착 노드까지의 최단 경로 찾기
     open_list: List[Node] = []
     closed_set = set()
@@ -111,7 +111,7 @@ def astar_road_finder(collection_ref: CollectionReference, start_node: Node, end
                     continue
             new_node.g = cur_node.g + inner_dict["distance"]
             if user_taste:
-                new_node.h = heuristic_preference_distance(new_node, end_node, inner_dict["attributes"], group_preference)
+                new_node.h = heuristic_preference_distance(new_node, end_node, inner_dict["clusters"][user_group]["attributes"], group_preference)
             else:
                 new_node.h = heuristic_Manhattan_distance(new_node, end_node)
             new_node.f = new_node.g + new_node.h
@@ -244,11 +244,11 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 시작노드-도착노드 길찾기
-        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node, user_taste=user_taste, group_preference=[])
+        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node, user_taste=user_taste, user_group=user_group, group_preference=[])
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message=f"No route was found between the start and end points. Error: {e.args[0]}",
+            message=f"An error occured while running a star. Error: {repr(e)}",
         )
 
     # 시작점과 도착점을 최종 경로에 추가
@@ -273,6 +273,7 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         end_point = req.data["EndPoint"]
         user_taste = req.data["UserTaste"]
         user_group = req.data["UserGroup"]
+        group_preference = req.data["GroupPreference"]
     except KeyError as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
@@ -303,6 +304,8 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         end_lat = float(end_lat)
         end_lon = float(end_lon)
         user_taste = bool(user_taste)
+        user_group = str(user_group)
+        group_preference = list(group_preference)
     except ValueError as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
@@ -310,8 +313,8 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 노드 맵 생성
-        collection_ref = firestore_client.collection("map_data_songdo")
-        group_preference = firestore_client.collection("Clusters").document(user_group).get().to_dict()["centroid"]
+        collection_ref = firestore_client.collection("map_data_songdo_v2")
+        node_map = create_node_map(collection_ref)
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -337,11 +340,11 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 시작노드-도착노드 길찾기
-        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node, user_taste=user_taste, group_preference=group_preference)
+        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node, user_taste=user_taste, user_group=user_group, group_preference=group_preference)
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
-            message=f"No route was found between the start and end points. Error: {e.args}",
+            message=f"An error occured while running a star. Error: {repr(e)}",
         )
 
     # 시작점과 도착점을 최종 경로에 추가
@@ -461,3 +464,8 @@ def assign_label(event) -> None:
             label = doc.id
 
     firestore_client.collection("users").document(user_id).update({"label": int(label)})
+
+
+@https_fn.on_call(memory=options.MemoryOption.MB_512)
+def debug(req: https_fn.CallableRequest) -> Dict[str, str]:
+    return {"message": "Hello, World!"}
