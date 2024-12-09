@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../utils/providers/preference_provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-final _firestore = FirebaseFirestore.instance;
-final _authentication = FirebaseAuth.instance;
 
 class EditKeywordsPage extends StatefulWidget {
   @override
@@ -31,21 +26,21 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final preferenceProvider =
-          Provider.of<PreferenceProvider>(context, listen: false);
+      Provider.of<PreferenceProvider>(context, listen: false);
       final currentLikes = preferenceProvider.likes;
       final currentDislikes = preferenceProvider.dislikes;
 
       setState(() {
         availableLikes = allKeywords
             .where((e) =>
-                e["type"] == "like" && !currentLikes.contains(e["keyword"]))
+        e["type"] == "like" && !currentLikes.contains(e["keyword"]))
             .map((e) => e["keyword"] as String)
             .toList();
 
         availableDislikes = allKeywords
             .where((e) =>
-                e["type"] == "dislike" &&
-                !currentDislikes.contains(e["keyword"]))
+        e["type"] == "dislike" &&
+            !currentDislikes.contains(e["keyword"]))
             .map((e) => e["keyword"] as String)
             .toList();
       });
@@ -117,56 +112,6 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
               ),
               onPressed: () {
-                Map<String, int> attributes = {
-                  "scenery": 0,
-                  "safety": 0,
-                  "traffic": 0,
-                  "fast": 0,
-                  "signal": 0,
-                  "uphill": 0,
-                  "bigRoad": 0,
-                  "bikePath": 0,
-                };
-                for (final keyword in currentLikes) {
-                  if (keyword == "풍경") {
-                    attributes["scenery"] = 1;
-                  } else {
-                    attributes["scenery"] = -1;
-                  }
-                  if (keyword == "안전") {
-                    attributes["safety"] = 1;
-                  } else {
-                    attributes["safety"] = -1;
-                  }
-                  if (keyword == "속도") {
-                    attributes["fast"] = 1;
-                  } else {
-                    attributes["fast"] = -1;
-                  }
-                }
-                for (final keyword in currentDislikes) {
-                  if (keyword == "통행량") {
-                    attributes["traffic"] = -1;
-                  } else {
-                    attributes["traffic"] = 1;
-                  }
-                  if (keyword == "신호") {
-                    attributes["signal"] = -1;
-                  } else {
-                    attributes["signal"] = 1;
-                  }
-                  if (keyword == "오르막") {
-                    attributes["uphill"] = -1;
-                  } else {
-                    attributes["uphill"] = 1;
-                  }
-                }
-                _firestore
-                    .collection('users')
-                    .doc(_authentication.currentUser?.uid)
-                    .update({
-                  'attributes': attributes,
-                });
                 Navigator.pop(context); // 결과 페이지로 돌아가기
               },
               child: const Text(
@@ -213,27 +158,28 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
               Expanded(
                 child: DragTarget<String>(
                   onWillAccept: (data) {
-                    // 해당 키워드가 추가 가능한 키워드에 있을 경우 수락
-                    return availableKeywords.contains(data) ||
-                        (!keywords.contains(data) &&
-                            allKeywords.any((e) =>
-                                e["keyword"] == data &&
-                                e["type"] ==
-                                    (title == '좋아요!' ? "like" : "dislike")));
+                    // 추가 가능한 키워드인지 확인
+                    return data != null &&
+                        allKeywords.any((e) =>
+                        e["keyword"] == data &&
+                            e["type"] ==
+                                (title == '좋아요!' ? "like" : "dislike"));
                   },
-                  onAccept: onAdd,
+                  onAccept: (data) {
+                    onAdd(data);
+                  },
                   builder: (context, candidateData, rejectedData) {
                     return Wrap(
                       spacing: 10,
                       children: keywords
                           .map((keyword) => Chip(
-                                label: Text(keyword),
-                                backgroundColor: color,
-                                labelStyle: TextStyle(color: Colors.white),
-                                deleteIcon:
-                                    Icon(Icons.close, color: Colors.white),
-                                onDeleted: () => onRemove(keyword),
-                              ))
+                        label: Text(keyword),
+                        backgroundColor: color,
+                        labelStyle: TextStyle(color: Colors.white),
+                        deleteIcon:
+                        Icon(Icons.close, color: Colors.white),
+                        onDeleted: () => onRemove(keyword),
+                      ))
                           .toList(),
                     );
                   },
@@ -260,23 +206,29 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
                 spacing: 10,
                 children: availableKeywords
                     .map((keyword) => Draggable<String>(
-                          data: keyword,
-                          feedback: Chip(
-                            label: Text(keyword),
-                            backgroundColor: color,
-                            labelStyle: TextStyle(color: Colors.white),
-                          ),
-                          childWhenDragging: Chip(
-                            label: Text(keyword),
-                            backgroundColor: Colors.grey,
-                            labelStyle: TextStyle(color: Colors.white),
-                          ),
-                          child: Chip(
-                            label: Text(keyword),
-                            backgroundColor: color,
-                            labelStyle: TextStyle(color: Colors.white),
-                          ),
-                        ))
+                  data: keyword,
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: Chip(
+                      label: Text(keyword),
+                      backgroundColor: color,
+                      labelStyle: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  childWhenDragging: Opacity(
+                    opacity: 0.5,
+                    child: Chip(
+                      label: Text(keyword),
+                      backgroundColor: color,
+                      labelStyle: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  child: Chip(
+                    label: Text(keyword),
+                    backgroundColor: color,
+                    labelStyle: TextStyle(color: Colors.white),
+                  ),
+                ))
                     .toList(),
               ),
             ],
