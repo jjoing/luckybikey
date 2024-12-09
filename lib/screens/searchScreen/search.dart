@@ -31,6 +31,16 @@ class _SearchState extends State<Search> {
   List<Map<String, dynamic>> searchSuggestions = [];
   List<Map<String, dynamic>> publicBikes = [];
   Set<NMarker> publicMarkers = {};
+  List<Color> colors = [
+    Colors.pink,
+    Colors.red,
+    Colors.orange,
+    Colors.yellow,
+    Colors.green,
+    Colors.blue,
+    Colors.indigo,
+    Colors.purple,
+  ];
 
   final Key _mapKey = UniqueKey(); // 지도 리로드를 위한 Key
   bool _usePublicBike = false; // 마커 표시 여부
@@ -244,7 +254,7 @@ class _SearchState extends State<Search> {
                                   context: context,
                                   builder: (BuildContext context) {
                                     return Navigation(
-                                      route: route,
+                                      route: route[0]['route'],
                                       fullDistance: fullDistance,
                                       start: searchResult[0],
                                       end: searchResult[1],
@@ -276,25 +286,62 @@ class _SearchState extends State<Search> {
                                       publicBikes, _firestore, _authentication)
                                   .then((result) {
                                 setState(() {
-                                  route = result['route'];
-                                  fullDistance = result['full_distance'];
+                                  route = result;
+                                  fullDistance = result[0]['full_distance'];
                                 });
-                                ct?.updateCamera(NCameraUpdate.fitBounds(
-                                  NLatLngBounds.from(
-                                      route.map((e) => e["NLatLng"])),
-                                  padding: const EdgeInsets.all(50),
-                                ));
-                                ct?.addOverlay(NPathOverlay(
-                                  id: 'routePath',
-                                  coords: List<NLatLng>.from(route.map((e) =>
-                                      e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
-                                  color: Colors.lightGreen,
-                                  width: 5,
-                                ));
+                                for (var i = 0; i < route.length; i++) {
+                                  if (route[i].isEmpty) {
+                                    continue;
+                                  }
+                                  final bikepath = route[i]['route'];
+                                  ct?.addOverlay(NPathOverlay(
+                                    id: 'routePath$i',
+                                    coords: List<NLatLng>.from(bikepath.map(
+                                        (e) => e[
+                                            "NLatLng"])), // NLatLng로 변환된 좌표 리스트
+                                    color: colors[i % colors.length],
+                                    width: 3,
+                                  ));
+                                }
+                                // ct?.updateCamera(NCameraUpdate.fitBounds(
+                                //   NLatLngBounds.from(
+                                //       route.map((e) => e["NLatLng"])),
+                                //   padding: const EdgeInsets.all(50),
+                                // ));
+                                // ct?.addOverlay(NPathOverlay(
+                                //   id: 'routePath',
+                                //   coords: List<NLatLng>.from(route.map((e) =>
+                                //       e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
+                                //   color: Colors.lightGreen,
+                                //   width: 5,
+                                // ));
                               }, onError: (error, stackTrace) {
                                 tts.speak("경로를 찾을 수 없습니다.");
                                 print(error);
                               });
+                              // searchRoute(searchResult, _usePublicBike,
+                              //         publicBikes, _firestore, _authentication)
+                              //     .then((result) {
+                              //   setState(() {
+                              //     route = result['route'];
+                              //     fullDistance = result['full_distance'];
+                              //   });
+                              //   ct?.updateCamera(NCameraUpdate.fitBounds(
+                              //     NLatLngBounds.from(
+                              //         route.map((e) => e["NLatLng"])),
+                              //     padding: const EdgeInsets.all(50),
+                              //   ));
+                              //   ct?.addOverlay(NPathOverlay(
+                              //     id: 'routePath',
+                              //     coords: List<NLatLng>.from(route.map((e) =>
+                              //         e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
+                              //     color: Colors.lightGreen,
+                              //     width: 5,
+                              //   ));
+                              // }, onError: (error, stackTrace) {
+                              //   tts.speak("경로를 찾을 수 없습니다.");
+                              //   print(error);
+                              // });
                             }
                           },
                           icon: const Icon(Icons.search),
