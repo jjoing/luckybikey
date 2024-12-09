@@ -161,8 +161,9 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
                     // 해당 키워드가 추가 가능한 키워드에 있을 경우 수락
                     return availableKeywords.contains(data) ||
                         (!keywords.contains(data) &&
-                            allKeywords
-                                .any((e) => e["keyword"] == data && e["type"] == (title == '좋아요!' ? "like" : "dislike")));
+                            allKeywords.any((e) =>
+                            e["keyword"] == data &&
+                                e["type"] == (title == '좋아요!' ? "like" : "dislike")));
                   },
                   onAccept: onAdd,
                   builder: (context, candidateData, rejectedData) {
@@ -173,8 +174,7 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
                         label: Text(keyword),
                         backgroundColor: color,
                         labelStyle: TextStyle(color: Colors.white),
-                        deleteIcon:
-                        Icon(Icons.close, color: Colors.white),
+                        deleteIcon: Icon(Icons.close, color: Colors.white),
                         onDeleted: () => onRemove(keyword),
                       ))
                           .toList(),
@@ -204,15 +204,21 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
                 children: availableKeywords
                     .map((keyword) => Draggable<String>(
                   data: keyword,
-                  feedback: Chip(
-                    label: Text(keyword),
-                    backgroundColor: color,
-                    labelStyle: TextStyle(color: Colors.white),
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: Chip(
+                      label: Text(keyword),
+                      backgroundColor: color,
+                      labelStyle: TextStyle(color: Colors.white),
+                    ),
                   ),
-                  childWhenDragging: Chip(
-                    label: Text(keyword),
-                    backgroundColor: Colors.grey,
-                    labelStyle: TextStyle(color: Colors.white),
+                  childWhenDragging: Opacity(
+                    opacity: 0.5,
+                    child: Chip(
+                      label: Text(keyword),
+                      backgroundColor: color,
+                      labelStyle: TextStyle(color: Colors.white),
+                    ),
                   ),
                   child: Chip(
                     label: Text(keyword),
