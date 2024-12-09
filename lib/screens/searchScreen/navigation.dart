@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'navigation_utils.dart';
 
@@ -14,6 +16,8 @@ class Navigation extends StatefulWidget {
     required this.start,
     required this.end,
     required this.tts,
+    required this.firestore,
+    required this.authentication,
   }) : super(key: key);
 
   final List<Map<String, dynamic>> route;
@@ -21,6 +25,8 @@ class Navigation extends StatefulWidget {
   final Map<String, dynamic> start;
   final Map<String, dynamic> end;
   final FlutterTts tts;
+  final FirebaseFirestore firestore;
+  final FirebaseAuth authentication;
 
   @override
   State<Navigation> createState() => _NavigationState();
@@ -103,7 +109,10 @@ class _NavigationState extends State<Navigation> {
             context: context,
             builder: (BuildContext context) {
               return Navigationend(
-                  fullDistance: widget.fullDistance, tick: t.tick.toDouble());
+                  fullDistance: widget.fullDistance,
+                  tick: t.tick.toDouble(),
+                  firestore: widget.firestore,
+                  authentication: widget.authentication);
             });
         timer?.cancel();
       }

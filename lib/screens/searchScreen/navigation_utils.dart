@@ -7,6 +7,8 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../utils/mapAPI.dart';
 
@@ -60,6 +62,13 @@ Map<String, dynamic> updateNavState(
     nextNode['NLatLng'].longitude,
   );
 
+  final distanceToEnd = calculateDistance(
+    navState['ProjectedPosition']['latitude'],
+    navState['ProjectedPosition']['longitude'],
+    navState['Route'][navState['Route'].length - 1]['NLatLng'].latitude,
+    navState['Route'][navState['Route'].length - 1]['NLatLng'].longitude,
+  );
+
   navState['Angle'] = calculateBearing(
     currentNode['NLatLng'].latitude,
     currentNode['NLatLng'].longitude,
@@ -67,22 +76,30 @@ Map<String, dynamic> updateNavState(
     nextNode['NLatLng'].longitude,
   );
 
+  print('current index: ${navState["CurrentIndex"]} distance: $distance');
+
+  if (distanceToEnd < 50) {
+    tts.speak('목적지에 도착했습니다');
+    print('목적지에 도착했습니다');
+    navState['finishFlag'] = true;
+    return navState;
+  }
   if (navState['CurrentIndex'] == navState['Route'].length - 2) {
-    if (distance < 20) {
+    if (distance < 50) {
       tts.speak('목적지에 도착했습니다');
       print('목적지에 도착했습니다');
       navState['finishFlag'] = true;
       return navState;
     } else if (navState['ttsFlag'][0] == false) {
-      tts.speak('목적지까지 ${distance.round()}미터 남았습니다');
+      tts.speak('목적지까지 ${(distance / 10).floor() * 10}미터 남았습니다');
       print('목적지까지 ${distance.round()}미터 남았습니다');
       navState['ttsFlag'][0] = true;
     }
   } else {
     var ttsMessage = '';
-    if (distance < 20) {
+    if (distance < 50) {
       if (navState['ttsFlag'][0] == false) {
-        ttsMessage = '${distance.round()}미터 앞 ';
+        ttsMessage = '${(distance / 10).floor() * 10}미터 앞 ';
         if (currentNode['angle'] > 45) {
           switch (currentNode['isleft']) {
             case true:
@@ -97,9 +114,9 @@ Map<String, dynamic> updateNavState(
         print(ttsMessage);
         navState['ttsFlag'][0] = true;
       }
-    } else if (distance < 50) {
+    } else if (distance < 100) {
       if (navState['ttsFlag'][1] == false) {
-        ttsMessage = '${distance.round()}미터 후 ';
+        ttsMessage = '${(distance / 10).floor() * 10}미터 후 ';
         if (currentNode['angle'] > 45) {
           switch (currentNode['isleft']) {
             case true:
@@ -115,7 +132,7 @@ Map<String, dynamic> updateNavState(
         navState['ttsFlag'][1] = true;
       }
     } else if (navState['ttsFlag'][2] == false) {
-      ttsMessage = '${distance.round()}미터동안 직진입니다';
+      ttsMessage = '${(distance / 10).floor() * 10}미터동안 직진입니다';
       tts.speak(ttsMessage);
       print(ttsMessage);
       navState['ttsFlag'][2] = true;
@@ -198,12 +215,13 @@ int _getProjectionNodes(List<Map<String, dynamic>> route,
     double currentLatitude, double currentLongitude, int lastIndex) {
   List<int> closeNodeIndexList = []; //index 쌍 출발점 Index 저장
   int projectionNodeIndex = -1;
+  int startIndex = lastIndex;
 
   if (lastIndex > 2) {
-    lastIndex -= 2;
+    startIndex -= 2;
   }
 
-  for (int i = lastIndex; i < route.length - 1; i++) {
+  for (int i = startIndex; i < route.length - 1; i++) {
     // 현재 노드 (point)와 그 다음 노드 (nextPoint)
     var point = route[i];
     var nextPoint = route[i + 1];
@@ -235,6 +253,17 @@ int _getProjectionNodes(List<Map<String, dynamic>> route,
   }
 
   double minDistance = 1000000000000;
+  double lastNodeDistance = calculateDistance(
+      currentLatitude,
+      currentLongitude,
+      route[lastIndex]['NLatLng'].latitude,
+      route[lastIndex]['NLatLng'].longitude);
+  double lastNodetoNextDistance = calculateDistance(
+      route[lastIndex]['NLatLng'].latitude,
+      route[lastIndex]['NLatLng'].longitude,
+      route[lastIndex + 1]['NLatLng'].latitude,
+      route[lastIndex + 1]['NLatLng'].longitude);
+
   // 점과 직선 사이의 거리를 계산하여 가장 작은 pair를 선택
   for (int i in closeNodeIndexList) {
     // 점과 직선 사이의 최소 거리 계산 (여기서는 예시로 단순히 거리 계산)
@@ -250,6 +279,25 @@ int _getProjectionNodes(List<Map<String, dynamic>> route,
       projectionNodeIndex = i;
     }
     // 직선과 점 사이의 거리가 최소일 경우에 projectionNodeList에 추가
+  }
+
+  double nextNodeDistance = calculateDistance(
+      currentLatitude,
+      currentLongitude,
+      route[lastIndex + 1]['NLatLng'].latitude,
+      route[lastIndex + 1]['NLatLng'].longitude);
+
+  print('minDistance: $minDistance');
+  print('lastNodeDistance: $lastNodeDistance');
+  print('lastNodetoNextDistance: $lastNodetoNextDistance');
+  print('nextNodeDistance: $nextNodeDistance');
+  print('lastIndex: $lastIndex');
+  print('projectionNodeIndex: $projectionNodeIndex');
+
+  // 이전 노드에 계속 머물러 있지만, 다음 노드와 거리가 가까워져 다음 노드로 이동되는 것 방지
+  // minDistance가 5보다 크고 lastIndex 노드와 다음 노드 사이의 거리보다 현 위치에서 last Index Node까지의 거리가 더 작을 경우 lastIndex 반환
+  if (nextNodeDistance > 10 && lastNodeDistance < lastNodetoNextDistance + 10) {
+    projectionNodeIndex = lastIndex;
   }
   // ProjectionNodeList 반환
   return projectionNodeIndex;
@@ -281,8 +329,18 @@ Future<List<Map<String, dynamic>>> pulicBike() async {
 
 //길찾기 3번 연결하기
 
-Future<Map<String, dynamic>> searchRoute(
-    searchResult, usePublicBike, publicBikes) async {
+Future<List<Map<String, dynamic>>> searchRoute(
+    searchResult, usePublicBike, publicBikes, firestore, authentication) async {
+  String userGroup = await firestore
+      .collection('users')
+      .doc(authentication.currentUser!.uid)
+      .get()
+      .then((value) => value.data()!['label'].toString());
+  List<double> groupPreference = await firestore
+      .collection('Clusters')
+      .doc(userGroup)
+      .get()
+      .then((value) => List<double>.from(value.data()!['centroid']));
   if (usePublicBike) {
     Map<String, dynamic> startStation = _getClosestPublicBikeStation(
         searchResult[0]['mapy'], searchResult[0]['mapx'], publicBikes);
@@ -297,8 +355,9 @@ Future<Map<String, dynamic>> searchRoute(
         "lat": startStation['NLatLng'].latitude,
         "lon": startStation['NLatLng'].longitude
       },
-      "UseSharing": false,
       "UserTaste": false,
+      "UserGroup": userGroup,
+      "GroupPreference": groupPreference,
     });
     final fromStationResults = await _requestRoute({
       "StartPoint": {
@@ -309,8 +368,9 @@ Future<Map<String, dynamic>> searchRoute(
         "lat": endStation['NLatLng'].latitude,
         "lon": endStation['NLatLng'].longitude
       },
-      "UseSharing": false,
       "UserTaste": false,
+      "UserGroup": userGroup,
+      "GroupPreference": groupPreference,
     });
     final toEndResults = await _requestRoute({
       "StartPoint": {
@@ -321,26 +381,28 @@ Future<Map<String, dynamic>> searchRoute(
         "lat": searchResult[1]['mapy'],
         "lon": searchResult[1]['mapx']
       },
-      "UseSharing": false,
       "UserTaste": false,
+      "UserGroup": userGroup,
+      "GroupPreference": groupPreference,
     });
+    return [{}, {}];
 
-    // 모든 route 정보 합치기
-    List<Map<String, dynamic>> combinedRoute = [
-      ...toStationResults['route'],
-      ...fromStationResults['route'].sublist(1),
-      ...toEndResults['route'].sublist(1)
-    ];
+    // // 모든 route 정보 합치기
+    // List<List<Map<String, dynamic>>> combinedRoute = [
+    //   ...toStationResults['route'],
+    //   ...fromStationResults['route'].sublist(1),
+    //   ...toEndResults['route'].sublist(1)
+    // ];
 
-    // full_distance 계산
-    double combinedFullDistance = toStationResults['full_distance'] +
-        fromStationResults['full_distance'] +
-        toEndResults['full_distance'];
+    // // full_distance 계산
+    // double combinedFullDistance = toStationResults['full_distance'] +
+    //     fromStationResults['full_distance'] +
+    //     toEndResults['full_distance'];
 
-    return {
-      "route": combinedRoute,
-      "full_distance": combinedFullDistance,
-    };
+    // return {
+    //   "route": combinedRoute,
+    //   "full_distance": combinedFullDistance,
+    // };
   } else {
     final results = await _requestRoute({
       "StartPoint": {
@@ -351,8 +413,9 @@ Future<Map<String, dynamic>> searchRoute(
         "lat": searchResult[1]['mapy'],
         "lon": searchResult[1]['mapx']
       },
-      "UseSharing": false,
       "UserTaste": false,
+      "UserGroup": userGroup,
+      "GroupPreference": groupPreference,
     });
 
     return results;
@@ -387,19 +450,112 @@ Map<String, dynamic> _getClosestPublicBikeStation(
   return nearestStation;
 }
 
-Future<Map<String, dynamic>> _requestRoute(req) async {
-  final results = await FirebaseFunctions.instance
-      .httpsCallable('request_route_debug')
-      .call(req);
-
-  List<Map<String, dynamic>> route =
-      List<Map<String, dynamic>>.from(results.data['route'].map((point) {
+Future<List<Map<String, dynamic>>> _requestRoute(req) async {
+  final List<Map<String, dynamic>> calls = List.generate(8, (index) {
+    final List<double> groupPrefernce = List<double>.generate(8, (i) {
+      if (i == index) {
+        return req['GroupPreference'][i];
+      } else {
+        return 0.0;
+      }
+    });
     return {
-      "NLatLng": NLatLng(point['lat'], point['lon']),
-      "distance": point['distance']
+      "Index": index + 2,
+      "StartPoint": {
+        "lat": req['StartPoint']['lat'],
+        "lon": req['StartPoint']['lon']
+      },
+      "EndPoint": {
+        "lat": req['EndPoint']['lat'],
+        "lon": req['EndPoint']['lon']
+      },
+      "UserTaste": true,
+      "UserGroup": req['UserGroup'],
+      "GroupPreference": groupPrefernce,
     };
-  }));
+  });
+  // All preferences route
+  calls.insert(0, {
+    "Index": 1,
+    "StartPoint": {
+      "lat": req['StartPoint']['lat'],
+      "lon": req['StartPoint']['lon'],
+    },
+    "EndPoint": {
+      "lat": req['EndPoint']['lat'],
+      "lon": req['EndPoint']['lon'],
+    },
+    "UserTaste": true,
+    "UserGroup": req['UserGroup'],
+    "GroupPreference": req['GroupPreference'],
+  });
+  // Fastest route
+  calls.insert(0, {
+    "Index": 0,
+    "StartPoint": {
+      "lat": req['StartPoint']['lat'],
+      "lon": req['StartPoint']['lon'],
+    },
+    "EndPoint": {
+      "lat": req['EndPoint']['lat'],
+      "lon": req['EndPoint']['lon'],
+    },
+    "UserTaste": false,
+    "UserGroup": req['UserGroup'],
+    "GroupPreference": req['GroupPreference'],
+  });
 
+  print([calls[0]]);
+
+  List<Map<String, dynamic>> resultRoute = [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+  ];
+
+  await Future.forEach([calls[0]], (call) async {
+    // Remove [calls[0]] to use all preferences route
+    final results = await FirebaseFunctions.instance
+        .httpsCallable('request_route_debug')
+        .call(call);
+    resultRoute[call["Index"]] = {
+      "route": _preprocessRoute(
+        List<Map<String, dynamic>>.from(
+          results.data['path'].map((point) {
+            return {
+              "NLatLng": NLatLng(point['lat'], point['lon']),
+              "distance": point['distance']
+            };
+          }),
+        ),
+      ),
+      "full_distance": results.data['full_distance'],
+    };
+  });
+
+  return resultRoute;
+}
+
+// final results = await FirebaseFunctions.instance
+//     .httpsCallable('request_route_debug')
+//     .call(req);
+
+// List<Map<String, dynamic>> route =
+//     List<Map<String, dynamic>>.from(results.data['path'].map((point) {
+//   return {
+//     "NLatLng": NLatLng(point['lat'], point['lon']),
+//     // "distance": point['distance']
+//   };
+// }));
+
+List<Map<String, dynamic>> _preprocessRoute(List<Map<String, dynamic>> route) {
   List<Map<String, dynamic>> routeInfo = [];
 
   for (var i = 0; i < route.length - 2; i++) {
@@ -448,7 +604,7 @@ Future<Map<String, dynamic>> _requestRoute(req) async {
     "angle": null,
   });
 
-  return {"route": routeInfo, "full_distance": results.data['full_distance']};
+  return routeInfo;
 }
 
 Future<List<Map<String, dynamic>>> searchRequest(req) async {
@@ -485,10 +641,14 @@ class Navigationend extends StatefulWidget {
     Key? key,
     required this.fullDistance,
     required this.tick,
+    required this.firestore,
+    required this.authentication,
   }) : super(key: key);
 
   final double fullDistance;
   final double tick;
+  final FirebaseFirestore firestore;
+  final FirebaseAuth authentication;
 
   @override
   NavigationendState createState() => NavigationendState();
@@ -534,6 +694,12 @@ class NavigationendState extends State<Navigationend> {
       actions: <Widget>[
         TextButton(
           onPressed: () {
+            widget.firestore //TODO: Better Feedback
+                .collection('users')
+                .doc(widget.authentication.currentUser!.uid)
+                .update({
+              'rating': rating,
+            });
             Navigator.pop(context);
             Navigator.pop(context);
           },
@@ -543,3 +709,128 @@ class NavigationendState extends State<Navigationend> {
     );
   }
 }
+
+// class RouteProvider with ChangeNotifier {
+//   List<Map<String, dynamic>> routeResult = [{}, {}, {}, {}, {}, {}, {}];
+
+//   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+//   final FirebaseAuth authentication = FirebaseAuth.instance;
+
+//   void setRouteResult(Map<String, dynamic> result, index) {
+//     routeResult[index] = result;
+//     notifyListeners();
+//   }
+// }
+
+// class RouteResult extends StatefulWidget {
+//   const RouteResult({
+//     Key? key,
+//     required this.searchResult,
+//     required this.usePublicBike,
+//     required this.publicBikes,
+//     required this.firestore,
+//     required this.authentication,
+//   }) : super(key: key);
+
+//   final List<Map<String, dynamic>> searchResult;
+//   final bool usePublicBike;
+//   final List<Map<String, dynamic>> publicBikes;
+//   final FirebaseFirestore firestore;
+//   final FirebaseAuth authentication;
+
+//   @override
+//   RouteResultState createState() => RouteResultState();
+// }
+
+// class RouteResultState extends State<RouteResult> {
+//   @override
+//   void initState() {
+//     super.initState();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: Container(
+//         height: 200,
+//         child: ListView(
+//           scrollDirection: Axis.horizontal,
+//           children: <Widget>[
+//             for (var i = 0; i < widget.searchResult.length - 1; i++)
+//               FutureBuilder(
+//                 future: searchRoute(
+//                   widget.searchResult.sublist(i, i + 2),
+//                   widget.usePublicBike,
+//                   widget.publicBikes,
+//                   widget.firestore,
+//                   widget.authentication,
+//                 ),
+//                 builder: (context, snapshot) {
+//                   if (snapshot.connectionState == ConnectionState.done) {
+//                     return RouteCard(
+//                       route: snapshot.data?['route'],
+//                       fullDistance: snapshot.data?['full_distance'],
+//                       index: i,
+//                     );
+//                   } else {
+//                     return const CircularProgressIndicator();
+//                   }
+//                 },
+//               ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// class RouteCard extends StatelessWidget {
+//   const RouteCard({
+//     Key? key,
+//     required this.route,
+//     required this.fullDistance,
+//     required this.index,
+//   }) : super(key: key);
+
+//   final List<Map<String, dynamic>> route;
+//   final double fullDistance;
+//   final int index;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Card(
+//       child: Column(
+//         children: <Widget>[
+//           Text('Route $index'),
+//           Text('Distance: ${fullDistance.round()}m'),
+//           for (var i = 0; i < route.length; i++)
+//             ListTile(
+//               title: Text('Node $i'),
+//               subtitle: Text(
+//                   'Lat: ${route[i]['NLatLng'].latitude}, Lon: ${route[i]['NLatLng'].longitude}'),
+//             ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// class RouteProvider with ChangeNotifier {
+//   // Map to store the fetched route data
+//   List<Map<String, String>> _routeData = {};
+
+//   // Getter for route data
+//   List<Map<String, String>> get routeData => _routeData;
+
+//   // Function to fetch route data and store it
+//   Future<void> fetchAllRoutes(searchResult, usePublicBike, publicBikes, firestore, authentication) async {
+//     // Create a list of futures to fetch data for all routes
+//     List<Future> routeFutures = routeIds.map((routeId) => searchRoute(searchResult, usePublicBike, publicBikes, firestore, authentication).then((data) {
+//       _routeData[routeId] = data;
+//       notifyListeners(); // Notify listeners when data is updated
+//     })).toList();
+
+//     // Wait for all futures to complete
+//     await Future.wait(routeFutures);
+//   }
+// }

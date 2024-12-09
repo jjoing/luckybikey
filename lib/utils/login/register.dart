@@ -5,8 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../screens/home.dart';
 
-final _firestore = FirebaseFirestore.instance;
-
 class register extends StatefulWidget {
   const register({super.key});
 
@@ -15,6 +13,7 @@ class register extends StatefulWidget {
 }
 
 class _registerState extends State<register> {
+  final _firestore = FirebaseFirestore.instance;
   final _authentication = FirebaseAuth.instance;
 
   final _formKey = GlobalKey<FormState>();
@@ -329,16 +328,16 @@ class _registerState extends State<register> {
                                 .email, // newUser.user!.email 대신 userEmail 사용 가능
                             'fullname': userFullName,
                             'createdAt': FieldValue.serverTimestamp(),
-                            'Attributes': {
-                              'attr1': 0,
-                              'attr2': 0,
-                              'attr3': 0,
-                              'attr4': 0,
-                              'attr5': 0,
-                              'attr6': 0,
-                              'attr7': 0,
-                              'attr8': 0,
-                            },
+                            'attributes': {
+                              "scenery": 0,
+                              "safety": 0,
+                              "traffic": 0,
+                              "fast": 0,
+                              "signal": 0,
+                              "uphill": 0,
+                              "bigRoad": 0,
+                              "bikePath": 0,
+                            }
                           });
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => Home()));
