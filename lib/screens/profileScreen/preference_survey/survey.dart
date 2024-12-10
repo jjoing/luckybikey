@@ -178,31 +178,34 @@ class _PreferenceSurveyState extends State<PreferenceSurvey> {
       final attributes = _determineAttributes(
           preferenceProvider.likes, preferenceProvider.dislikes);
 
-      return Center(
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.lightGreen,
-            padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
-          ),
-          onPressed: () {
-            _firestore
-                .collection('users')
-                .doc(_authentication.currentUser?.uid)
-                .update({
-              'attributes': attributes,
-            });
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) {
-                  return SurveyResultPage(resultType: resultType);
-                },
-              ),
-            );
-          },
-          child: const Text(
-            '결과 보러가기',
-            style: TextStyle(fontSize: 16, color: Colors.white),
+      return Container(
+        decoration: BoxDecoration(color: Colors.white),
+        child: Center(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.lightGreen,
+              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+            ),
+            onPressed: () {
+              _firestore
+                  .collection('users')
+                  .doc(_authentication.currentUser?.uid)
+                  .update({
+                'attributes': attributes,
+              });
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) {
+                    return SurveyResultPage(resultType: resultType);
+                  },
+                ),
+              );
+            },
+            child: const Text(
+              '결과 보러가기',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
           ),
         ),
       );
