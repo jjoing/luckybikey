@@ -66,18 +66,6 @@ class _RouteSelectorState extends State<RouteSelector> {
                   onTap: () {
                     final bikepath =
                         routeSelectorProvider.resultRoute[index]['route'];
-                    widget.ct?.addOverlay(NMarker(
-                        id: 'pathStart',
-                        position: NLatLng(
-                          bikepath[0]["NLatLng"].latitude,
-                          bikepath[0]["NLatLng"].longitude,
-                        )));
-                    widget.ct?.addOverlay(NMarker(
-                        id: 'pathEnd',
-                        position: NLatLng(
-                          bikepath[bikepath.length - 1]["NLatLng"].latitude,
-                          bikepath[bikepath.length - 1]["NLatLng"].longitude,
-                        )));
                     widget.ct?.addOverlay(NPathOverlay(
                       id: 'routePath',
                       coords: List<NLatLng>.from(bikepath
@@ -126,7 +114,7 @@ class _RouteSelectorState extends State<RouteSelector> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '소요 시간: ${(routeSelectorProvider.resultRoute[index]["full_distance"] / 1000 * 15).round()} 분',
+                          '소요 시간: ${(routeSelectorProvider.resultRoute[index]["full_distance"] / 1000 * 4).round()} 분',
                           style: const TextStyle(
                             fontSize: 12,
                           ),
