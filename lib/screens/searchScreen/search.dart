@@ -479,6 +479,36 @@ class _SearchState extends State<Search> {
                   child: const Text('X'),
                 ),
               ),
+            if (_showRouteSelector)
+              Positioned(
+                bottom: 250,
+                left: MediaQuery.of(context).size.width * 0.7,
+                right: MediaQuery.of(context).size.width * 0.1,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (routeSelectorProvider.selectedIndex == -1) {
+                        tts.speak("경로를 선택해주세요.");
+                      } else {
+                        tts.speak("안내를 시작합니다.");
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return Navigation(
+                              routeInfo: routeSelectorProvider.resultRoute[
+                                  routeSelectorProvider.selectedIndex],
+                              tts: tts,
+                              firestore: _firestore,
+                              authentication: _authentication,
+                            );
+                          },
+                        );
+                      }
+                    });
+                  },
+                  child: const Text('안내 시작'),
+                ),
+              ),
             Positioned(
               // Button for debugging
               bottom: 50,
