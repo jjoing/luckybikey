@@ -408,8 +408,8 @@ class _SearchState extends State<Search> {
               ),
             ),
             Positioned(
-              bottom: 200,
-              left: 20,
+              top: 80,
+              right: 18,
               child: SizedBox(
                 width: 50,
                 child: IconButton(

@@ -184,9 +184,9 @@ class _NavigationState extends State<Navigation> {
           ),
           if (toggleFeedback)
             Positioned(
-              top: 10,
-              left: 10,
               child: Dialog(
+                surfaceTintColor: Colors.transparent.withOpacity(0.0),
+                backgroundColor: Colors.transparent.withOpacity(0.0),
                 child: tapWidget(
                     navState: navState,
                     firestore: widget.firestore,
