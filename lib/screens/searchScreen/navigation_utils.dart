@@ -598,7 +598,7 @@ void _requestRoute(req, routeSelectorProvider) async {
   await Future.forEach(calls, (call) async {
     // Remove [calls[0]] to use all preferences route
     final results = await FirebaseFunctions.instance
-        .httpsCallable('request_route')
+        .httpsCallable('request_route_debug')
         .call(call);
     print('results ${call['Index']}: ${results.data['full_distance']}');
     routeSelectorProvider.setRoute({
@@ -819,6 +819,7 @@ List<Map<String, dynamic>> _preprocessRoute(List<Map<String, dynamic>> route) {
     routeInfo.add({
       "NLatLng": currentNode["NLatLng"], // 현재 노드의 좌표
       "distance": nextNode['distance'], // 다음 노드까지의 거리
+      "id": currentNode['id'], // 현재 노드의 id
       "isleft": crossProduct[2] > 0, // 다음 노드에서 좌회전인지 우회전인지 여부
       "angle": acos(dotProduct / (link1Norm * link2Norm)) *
           180 /
@@ -828,12 +829,14 @@ List<Map<String, dynamic>> _preprocessRoute(List<Map<String, dynamic>> route) {
   routeInfo.add({
     "NLatLng": route[route.length - 2]["NLatLng"],
     "distance": route[route.length - 1]['distance'],
+    "id": route[route.length - 2]['id'],
     "isleft": null,
     "angle": null,
   });
   routeInfo.add({
     "NLatLng": route[route.length - 1]["NLatLng"],
     "distance": null,
+    "id": route[route.length - 1]['id'],
     "isleft": null,
     "angle": null,
   });

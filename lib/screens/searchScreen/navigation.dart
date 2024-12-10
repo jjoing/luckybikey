@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'navigation_utils.dart';
+import 'feedback/tap_widget.dart';
 
 class Navigation extends StatefulWidget {
   const Navigation({
@@ -32,7 +33,7 @@ class _NavigationState extends State<Navigation> {
   Map<String, dynamic> navState = {};
   NaverMapController? ct;
   Timer? timer;
-  bool toggleFeedback = false;
+  bool toggleFeedback = true;
 
   @override
   void dispose() {
@@ -57,7 +58,7 @@ class _NavigationState extends State<Navigation> {
       "Angle": 0,
       "ttsFlag": [false, false, false],
       "finishFlag": false,
-      "feedbackCounter": 0,
+      "feedbackCounter": 1,
     };
 
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -183,7 +184,14 @@ class _NavigationState extends State<Navigation> {
           ),
           if (toggleFeedback)
             Positioned(
-              top: 10, left: 10, child: Text(""), // tapWidget,
+              top: 10,
+              left: 10,
+              child: Dialog(
+                child: tapWidget(
+                    navState: navState,
+                    firestore: widget.firestore,
+                    authentication: widget.authentication),
+              ),
             ),
         ],
       ),
