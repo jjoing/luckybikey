@@ -47,9 +47,9 @@ class _tapWidgetState extends State<tapWidget> {
         // 피드백을 감지하기 위한 double tap 영역
         child: Container(
           width: MediaQuery.of(context).size.width * 0.9,
-          height: MediaQuery.of(context).size.height * 0.4,
+          height: MediaQuery.of(context).size.height * 0.6,
           decoration: BoxDecoration(
-            color: Colors.lightGreen.withOpacity(0.3),
+            color: Colors.lightGreen.withOpacity(0.25),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -60,12 +60,17 @@ class _tapWidgetState extends State<tapWidget> {
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              'Double Tap Here if you are satisfied with your road!!',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(
+              child: Text(
+                'Double Tap here if you are satisfied with your road!!',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ),
