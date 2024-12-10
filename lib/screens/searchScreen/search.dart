@@ -7,6 +7,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import 'modal.dart';
 import 'navigation.dart';
@@ -14,6 +15,7 @@ import 'navigation_utils.dart';
 import 'route_selector.dart';
 import '../../components/bottomNaviBar.dart';
 import '../../../utils/providers/route_selector_provider.dart';
+import '../../../utils/providers/kakao_login_provider.dart';
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -77,6 +79,8 @@ class _SearchState extends State<Search> {
     final Completer<NaverMapController> mapControllerCompleter = Completer();
     final RouteSelectorProvider routeSelectorProvider =
         Provider.of<RouteSelectorProvider>(context);
+    final KakaoLoginProvider kakaoLoginProvider =
+        Provider.of<KakaoLoginProvider>(context);
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -111,6 +115,11 @@ class _SearchState extends State<Search> {
                                   searchResult[0] = {};
                                 },
                                 textInputAction: TextInputAction.go,
+                                onTap: () {
+                                  setState(() {
+                                    _showRouteSelector = false;
+                                  });
+                                },
                                 onSubmitted: (value) async {
                                   await searchRequest({"query": value}).then(
                                       (result) {
@@ -147,6 +156,7 @@ class _SearchState extends State<Search> {
                                       setState(() {
                                         searchResult[0] =
                                             searchSuggestions[index];
+                                        _showRouteSelector = false;
                                       });
                                       ct?.updateCamera(NCameraUpdate.withParams(
                                         target: searchResult[0]['NLatLng'],
@@ -180,6 +190,11 @@ class _SearchState extends State<Search> {
                                   searchResult[1] = {};
                                 },
                                 textInputAction: TextInputAction.go,
+                                onTap: () {
+                                  setState(() {
+                                    _showRouteSelector = false;
+                                  });
+                                },
                                 onSubmitted: (value) async {
                                   await searchRequest({"query": value}).then(
                                       (result) {
@@ -448,6 +463,41 @@ class _SearchState extends State<Search> {
                 right: 0,
                 child: RouteSelector(ct: ct),
               ),
+            if (_showRouteSelector)
+              Positioned(
+                bottom: 250,
+                left: MediaQuery.of(context).size.width * 0.1,
+                right: MediaQuery.of(context).size.width * 0.7,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _showRouteSelector = false;
+                      ct?.deleteOverlay(const NOverlayInfo(
+                          type: NOverlayType.pathOverlay, id: 'routePath'));
+                    });
+                  },
+                  child: const Text('X'),
+                ),
+              ),
+            Positioned(
+              // Button for debugging
+              bottom: 50,
+              left: 0,
+              right: 0,
+              child: ElevatedButton(
+                onPressed: () {
+                  FirebaseFunctions.instance.httpsCallable('update_feedback')({
+                    "connection": {
+                      "node1": "10023181016",
+                      "node2": "10023185920",
+                    },
+                    "label": "1",
+                    "pref": [1, -1, 1, 0, 0, 0, 0, 0, 0, 0],
+                  });
+                },
+                child: const Text('Debug'),
+              ),
+            ),
           ],
         ),
       ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -7,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'navigation_utils.dart';
+import 'feedback/tap_widget.dart';
 
 class Navigation extends StatefulWidget {
   const Navigation({
@@ -31,6 +33,7 @@ class _NavigationState extends State<Navigation> {
   Map<String, dynamic> navState = {};
   NaverMapController? ct;
   Timer? timer;
+  bool toggleFeedback = true;
 
   @override
   void dispose() {
@@ -55,6 +58,7 @@ class _NavigationState extends State<Navigation> {
       "Angle": 0,
       "ttsFlag": [false, false, false],
       "finishFlag": false,
+      "feedbackCounter": 1,
     };
 
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -62,6 +66,12 @@ class _NavigationState extends State<Navigation> {
 
       setState(() {
         navState = updateNavState(navState, ct, widget.tts);
+        if (navState['feedbackCounter'] > 0) {
+          toggleFeedback = true;
+        } else {
+          toggleFeedback = false;
+        }
+
         NMarker marker1 = NMarker(
           id: 'test1',
           position: NLatLng(
@@ -172,6 +182,17 @@ class _NavigationState extends State<Navigation> {
               child: const Text('닫기'),
             ),
           ),
+          if (toggleFeedback)
+            Positioned(
+              top: 10,
+              left: 10,
+              child: Dialog(
+                child: tapWidget(
+                    navState: navState,
+                    firestore: widget.firestore,
+                    authentication: widget.authentication),
+              ),
+            ),
         ],
       ),
     );

@@ -8,8 +8,8 @@ class KakaoLoginProvider with ChangeNotifier {
   bool isLogined = false;
   User? user;
   OAuthToken? kakaoToken;
-  final _firestore = FirebaseFirestore.instance;
   final _authentication = auth.FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
 
   Future<void> login() async {
     try {
@@ -19,6 +19,7 @@ class KakaoLoginProvider with ChangeNotifier {
           print('카카오톡으로 로그인 성공');
         } catch (e) {
           print('카카오톡 로그인 실패: $e');
+          return;
         }
       } else {
         try {
@@ -26,12 +27,13 @@ class KakaoLoginProvider with ChangeNotifier {
           print('카카오계정으로 로그인 성공');
         } catch (e) {
           print('카카오계정으로 로그인 실패: $e');
+          return;
         }
       }
       isLogined = true;
       user = await UserApi.instance.me();
 
-      // await checkUserExist(user, kakaoToken);
+      await checkUserExist(user, kakaoToken?.idToken);
       notifyListeners();
     } catch (e) {
       print('카카오 로그인 실패: $e');
@@ -53,36 +55,60 @@ class KakaoLoginProvider with ChangeNotifier {
   }
 
   Future<void> checkUserExist(user, token) async {
-    final userRef = _firestore.collection('users').doc(user!.id);
+    if (token.length > 128) {
+      token = token.substring(0, 128);
+    }
+    final result = await FirebaseFunctions.instance
+        .httpsCallable('generate_custom_token')
+        .call({"token": token});
+    await _authentication.signInWithCustomToken(result.data['token']);
 
-    if ((await userRef.get()).exists) {
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('generate_custom_token')
-          .call({"token": token});
-      await _authentication.signInWithCustomToken(result.data['token']);
+    if ((await _firestore
+            .collection('users')
+            .doc("${_authentication.currentUser?.uid}")
+            .get())
+        .exists) {
+      print('User already exists');
     } else {
-      await _firestore.collection('users').doc(user!.id).set({
-        'uid': user!.id,
-        'email': user!.kakaoAccount?.emailNeedsAgreement
+      print('User does not exist');
+      await _firestore
+          .collection('users')
+          .doc("${_authentication.currentUser?.uid}")
+          .set({
+        'uid': "${_authentication.currentUser?.uid}",
+        'email': user!.kakaoAccount?.emailNeedsAgreement != null &&
+                user!.kakaoAccount?.emailNeedsAgreement
             ? user!.kakaoAccount?.email
             : "", // newUser.user!.email 대신 userEmail 사용 가능
         'fullname': user.kakaoAccount?.profile?.nickname,
         'createdAt': FieldValue.serverTimestamp(),
         'attributes': {
-          "scenery": 0,
-          "safety": 0,
-          "traffic": 0,
-          "fast": 0,
-          "signal": 0,
-          "uphill": 0,
-          "bigRoad": 0,
-          "bikePath": 0,
+          "scenery": -1,
+          "safety": -1,
+          "traffic": -1,
+          "fast": -1,
+          "signal": -1,
+          "uphill": -1,
+          "bigRoad": -1,
+          "bikePath": -1,
         }
       });
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('generate_custom_token')
-          .call({"token": token});
-      await _authentication.signInWithCustomToken(result.data['token']);
+      _firestore
+          .collection('users')
+          .doc("${_authentication.currentUser?.uid}")
+          .update({
+        'attributes': {
+          'scenery': 0,
+          'safety': 0,
+          'traffic': 0,
+          'fast': 0,
+          'signal': 0,
+          'uphill': 0,
+          'bigRoad': 0,
+          'bikePath': 0,
+        }
+      });
+      print('User added to Firestore');
     }
   }
 }
