@@ -54,10 +54,8 @@ class _EditKeywordsPageState extends State<EditKeywordsPage> {
     final currentDislikes = preferenceProvider.dislikes;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('취향 키워드 수정하기'),
-        backgroundColor: Colors.lightGreen,
-      ),
+      appBar: AppBar(title: Text('취향 키워드 수정하기', style: TextStyle(color: Colors.lightGreen),),
+        backgroundColor: Colors.white,),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
