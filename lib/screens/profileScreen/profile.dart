@@ -11,6 +11,8 @@ import '../../utils/providers/kakao_login_provider.dart';
 import 'preference_survey/intro.dart';
 import '../../components/bottomNaviBar.dart';
 
+import '../searchScreen/retention/ranking_card.dart';
+
 import '../../utils/login/login.dart';
 import '../../utils/login/social_login.dart';
 import '../../utils/login/kakao_login.dart';
@@ -50,20 +52,20 @@ class Profile extends StatelessWidget {
                 ),
               ),
             ),
-            // 로그인/로그아웃 버튼
-            TextButton(
-              onPressed: () async {
-                if (kakaoLoginProvider.isLogined) {
-                  // 로그아웃 실행
-                  await kakaoLoginProvider.logout();
-                } else {
-                  // 로그인 실행
-                  await kakaoLoginProvider.login();
-                }
-              },
-              child: Text(
-                kakaoLoginProvider.isLogined ? '로그아웃' : '로그인',
-                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  // Dialog를 띄우는 코드
+                  showDialog(context: context, builder: (context) {return RankingCard();},);
+                },
+                child: const Text(
+                  '랭킹 확인하기',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.lightGreen,
+                  ),
+                ),
               ),
             ),
             Padding(
@@ -146,6 +148,25 @@ class Profile extends StatelessWidget {
                       ),
                     ),
 
+                  ),
+                  SizedBox(height: 20,),
+                  // 로그인/로그아웃 버튼
+                  Center(
+                    child: TextButton(
+                      onPressed: () async {
+                        if (kakaoLoginProvider.isLogined) {
+                          // 로그아웃 실행
+                          await kakaoLoginProvider.logout();
+                        } else {
+                          // 로그인 실행
+                          await kakaoLoginProvider.login();
+                        }
+                      },
+                      child: Text(
+                        kakaoLoginProvider.isLogined ? '로그아웃' : '로그인',
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                      ),
+                    ),
                   ),
                 ],
               ),
