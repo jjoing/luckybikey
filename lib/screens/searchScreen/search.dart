@@ -407,6 +407,8 @@ class _SearchState extends State<Search> {
                 ],
               ),
             ),
+
+            // 따릉이 사용 시 선택하는 버튼
             Positioned(
               top: 80,
               right: 18,
@@ -450,12 +452,16 @@ class _SearchState extends State<Search> {
                 ),
               ),
             ),
+
+            // 유저 리텐션을 위한 버튼
             const Positioned(
               bottom: 15,
               left: 0,
               right: 0,
               child: Center(child: ModalContent()),
             ),
+
+            // 여러 경로 중 하나를 선택하기 위한 버튼
             if (_showRouteSelector)
               Positioned(
                 bottom: 100,
@@ -463,78 +469,98 @@ class _SearchState extends State<Search> {
                 right: 0,
                 child: RouteSelector(ct: ct),
               ),
+
+
             if (_showRouteSelector)
               Positioned(
-                bottom: 250,
-                left: MediaQuery.of(context).size.width * 0.1,
-                right: MediaQuery.of(context).size.width * 0.7,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _showRouteSelector = false;
-                      ct?.deleteOverlay(const NOverlayInfo(
-                          type: NOverlayType.pathOverlay, id: 'routePath'));
-                    });
-                  },
-                  child: const Text('X'),
+                bottom: 15,
+                left: 0,
+                right: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      // 원하는 경로를 누른 뒤 안내를 시작하는 버튼
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.lightGreen[400],
+                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30,),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            if (routeSelectorProvider.selectedIndex == -1) {
+                              tts.speak("경로를 선택해주세요.");
+                            } else {
+                              tts.speak("안내를 시작합니다.");
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Navigation(
+                                    routeInfo: routeSelectorProvider.resultRoute[
+                                        routeSelectorProvider.selectedIndex],
+                                    tts: tts,
+                                    firestore: _firestore,
+                                    authentication: _authentication,
+                                  );
+                                },
+                              );
+                            }
+                          });
+                        },
+                        child: const Text('이 경로로 안내 시작', style: TextStyle(color: Colors.white),),
+                      ),
+
+                      // 경로 리스트 보여주는 거 없애는 버튼
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30,),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _showRouteSelector = false;
+                            ct?.deleteOverlay(const NOverlayInfo(
+                                type: NOverlayType.pathOverlay, id: 'routePath'));
+                          });
+                        },
+                        child: const Text('경로 닫기', style: TextStyle(color: Colors.white),),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            if (_showRouteSelector)
-              Positioned(
-                bottom: 250,
-                left: MediaQuery.of(context).size.width * 0.7,
-                right: MediaQuery.of(context).size.width * 0.1,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      if (routeSelectorProvider.selectedIndex == -1) {
-                        tts.speak("경로를 선택해주세요.");
-                      } else {
-                        tts.speak("안내를 시작합니다.");
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return Navigation(
-                              routeInfo: routeSelectorProvider.resultRoute[
-                                  routeSelectorProvider.selectedIndex],
-                              tts: tts,
-                              firestore: _firestore,
-                              authentication: _authentication,
-                            );
-                          },
-                        );
-                      }
-                    });
-                  },
-                  child: const Text('안내 시작'),
-                ),
-              ),
-            /*Positioned(
-              // Button for debugging
-              bottom: 50,
-              left: 0,
-              right: 0,
-              child: ElevatedButton(
-                onPressed: () {
-                  FirebaseFunctions.instance.httpsCallable('request_route')({
-                    "Index": 1,
-                    "StartPoint": {
-                      "lat": 0,
-                      "lon": 0,
-                    },
-                    "EndPoint": {
-                      "lat": 0,
-                      "lon": 0,
-                    },
-                    "UserTaste": false,
-                    "UserGroup": 0,
-                    "GroupPreference": [0],
-                    "LoadMap": true,
-                  });
-                },
-                child: const Text('Debug'),
-              ),
-            ),*/
+
+
+            // 디버그를 위한 버튼......
+            // Positioned(
+            //   // Button for debugging
+            //   bottom: 50,
+            //   left: 0,
+            //   right: 0,
+            //   child: ElevatedButton(
+            //     onPressed: () {
+            //       FirebaseFunctions.instance.httpsCallable('request_route')({
+            //         "Index": 1,
+            //         "StartPoint": {
+            //           "lat": 0,
+            //           "lon": 0,
+            //         },
+            //         "EndPoint": {
+            //           "lat": 0,
+            //           "lon": 0,
+            //         },
+            //         "UserTaste": false,
+            //         "UserGroup": 0,
+            //         "GroupPreference": [0],
+            //         "LoadMap": true,
+            //       });
+            //     },
+            //     child: const Text('Debug'),
+            //   ),
+            // ),
           ],
         ),
       ),
