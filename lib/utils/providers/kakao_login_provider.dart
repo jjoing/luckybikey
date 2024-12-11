@@ -32,8 +32,7 @@ class KakaoLoginProvider with ChangeNotifier {
       }
       isLogined = true;
       user = await UserApi.instance.me();
-
-      await checkUserExist(user, kakaoToken?.idToken);
+      await checkUserExist(user);
       notifyListeners();
     } catch (e) {
       print('카카오 로그인 실패: $e');
@@ -54,13 +53,10 @@ class KakaoLoginProvider with ChangeNotifier {
     }
   }
 
-  Future<void> checkUserExist(user, token) async {
-    if (token.length > 128) {
-      token = token.substring(0, 128);
-    }
+  Future<void> checkUserExist(user) async {
     final result = await FirebaseFunctions.instance
         .httpsCallable('generate_custom_token')
-        .call({"token": token});
+        .call({"token": user!.id.toString()});
     await _authentication.signInWithCustomToken(result.data['token']);
 
     if ((await _firestore
@@ -82,6 +78,7 @@ class KakaoLoginProvider with ChangeNotifier {
             : "", // newUser.user!.email 대신 userEmail 사용 가능
         'fullname': user.kakaoAccount?.profile?.nickname,
         'createdAt': FieldValue.serverTimestamp(),
+        'totalDistance': 0,
         'attributes': {
           "scenery": -1,
           "safety": -1,
