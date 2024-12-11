@@ -17,13 +17,29 @@ import '../../utils/login/login.dart';
 import '../../utils/login/social_login.dart';
 import '../../utils/login/kakao_login.dart';
 
+class Profile extends StatefulWidget {
+  const Profile({super.key});
 
-class Profile extends StatelessWidget {
+  @override
+  State<Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final preferenceProvider = Provider.of<PreferenceProvider>(context);
     final pageProvider = Provider.of<PageProvider>(context, listen: false);
     final kakaoLoginProvider = Provider.of<KakaoLoginProvider>(context);
+
+    if (preferenceProvider.loaded == false) {
+      preferenceProvider.loaded = true;
+      preferenceProvider.getPreferences();
+    }
 
     //final viewModel = MainViewModel(KakaoLogin());
 
@@ -33,18 +49,23 @@ class Profile extends StatelessWidget {
           children: [
             const SizedBox(height: 40),
             // 프로필 이미지
-            if (kakaoLoginProvider.user?.kakaoAccount?.profile?.profileImageUrl != null)
+            if (kakaoLoginProvider
+                    .user?.kakaoAccount?.profile?.profileImageUrl !=
+                null)
               CircleAvatar(
                 radius: 50,
                 backgroundImage: NetworkImage(
-                  kakaoLoginProvider.user?.kakaoAccount?.profile?.profileImageUrl ?? '',
+                  kakaoLoginProvider
+                          .user?.kakaoAccount?.profile?.profileImageUrl ??
+                      '',
                 ),
               ),
             const SizedBox(height: 10),
             // 닉네임
             Center(
               child: Text(
-                kakaoLoginProvider.user?.kakaoAccount?.profile?.nickname ?? '로그인이 필요합니다.',
+                kakaoLoginProvider.user?.kakaoAccount?.profile?.nickname ??
+                    '로그인이 필요합니다.',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -56,7 +77,12 @@ class Profile extends StatelessWidget {
               child: TextButton(
                 onPressed: () {
                   // Dialog를 띄우는 코드
-                  showDialog(context: context, builder: (context) {return RankingCard();},);
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return RankingCard();
+                    },
+                  );
                 },
                 child: const Text(
                   '랭킹 확인하기',
@@ -110,7 +136,8 @@ class Profile extends StatelessWidget {
                     spacing: 8.0,
                     runSpacing: 8.0,
                     children: preferenceProvider.dislikes
-                        .map((option) => _buildOptionChip(option, Colors.redAccent))
+                        .map((option) =>
+                            _buildOptionChip(option, Colors.redAccent))
                         .toList(),
                   ),
 
@@ -119,7 +146,8 @@ class Profile extends StatelessWidget {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.lightGreen,
-                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 50, vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -131,7 +159,8 @@ class Profile extends StatelessWidget {
                             builder: (context) => IntroToSurveyPage(
                               onContinue: () async {
                                 // 여기서 첫 접속 완료 상태를 업데이트하는 작업
-                                SharedPreferences prefs = await SharedPreferences.getInstance();
+                                SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
                                 await prefs.setBool('isFirstTimeUser', false);
                               },
                             ),
@@ -147,26 +176,9 @@ class Profile extends StatelessWidget {
                         ),
                       ),
                     ),
-
                   ),
-                  SizedBox(height: 20,),
-                  // 로그인/로그아웃 버튼
-                  Center(
-                    child: TextButton(
-                      onPressed: () async {
-                        if (kakaoLoginProvider.isLogined) {
-                          // 로그아웃 실행
-                          await kakaoLoginProvider.logout();
-                        } else {
-                          // 로그인 실행
-                          await kakaoLoginProvider.login();
-                        }
-                      },
-                      child: Text(
-                        kakaoLoginProvider.isLogined ? '로그아웃' : '로그인',
-                        style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-                      ),
-                    ),
+                  SizedBox(
+                    height: 20,
                   ),
                 ],
               ),
