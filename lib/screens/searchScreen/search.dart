@@ -516,13 +516,20 @@ class _SearchState extends State<Search> {
               right: 0,
               child: ElevatedButton(
                 onPressed: () {
-                  FirebaseFunctions.instance.httpsCallable('update_feedback')({
-                    "connection": {
-                      "node1": "10023181016",
-                      "node2": "10023185920",
+                  FirebaseFunctions.instance.httpsCallable('request_route')({
+                    "Index": 1,
+                    "StartPoint": {
+                      "lat": 0,
+                      "lon": 0,
                     },
-                    "label": "1",
-                    "pref": [1, -1, 1, 0, 0, 0, 0, 0, 0, 0],
+                    "EndPoint": {
+                      "lat": 0,
+                      "lon": 0,
+                    },
+                    "UserTaste": false,
+                    "UserGroup": 0,
+                    "GroupPreference": [0],
+                    "LoadMap": true,
                   });
                 },
                 child: const Text('Debug'),
