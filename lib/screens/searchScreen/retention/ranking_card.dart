@@ -27,7 +27,7 @@ class RankingCard extends StatefulWidget {
 class _RankingCardState extends State<RankingCard> {
   String fullName = 'loading...';
   int totalDistance = 0; // 주행 거리 초기값
-  int ranking = -1;
+  String ranking = '집계 중...';
 
   final ScreenshotController CardScreenshotController = ScreenshotController();
 
@@ -70,7 +70,7 @@ class _RankingCardState extends State<RankingCard> {
           .call(req);
       print(results.data["ranking"]);
       setState(() {
-        ranking = results.data["ranking"];
+        ranking = "${results.data["ranking"]}위";
       });
     } catch (e) {
       print("Error fetching rankings: $e");
@@ -130,7 +130,7 @@ class _RankingCardState extends State<RankingCard> {
                             SizedBox(height: 5,),
                             Text('주행 거리: ${totalDistance / 1000} km', style: TextStyle(fontSize: 18)),
                             SizedBox(height: 5,),
-                            Text('순위: $ranking 위',style: TextStyle(fontSize: 18)),
+                            Text('순위: $ranking',style: TextStyle(fontSize: 18)),
 
                           ],
                         ),
@@ -176,7 +176,7 @@ class _RankingCardState extends State<RankingCard> {
                       Uint8List? capturedImage =
                       await CardScreenshotController.capture();
                       if (capturedImage != null) {
-                        await kakaoShareWithImage(capturedImage);
+                        await kakaoShareForRanking(capturedImage);
                       } else {
                         throw '이미지를 캡처하지 못했습니다.';
                       }
