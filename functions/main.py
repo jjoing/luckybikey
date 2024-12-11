@@ -16,6 +16,8 @@ from typing import Dict, List, TypedDict
 from geopy.distance import distance
 import heapq
 from numpy import array, dot
+import timeit
+from copy import deepcopy
 
 AStarReturn = TypedDict("AStarReturn", {"route": List[Dict[str, float]], "path": List[Dict[str, float]], "full_distance": float})
 RequestRouteReturn = TypedDict("RequestRouteReturn", {"route": List[Dict[str, float]], "path": List[Dict[str, float]], "full_distance": float})
@@ -23,13 +25,6 @@ RequestRouteReturn = TypedDict("RequestRouteReturn", {"route": List[Dict[str, fl
 
 initialize_app()
 firestore_client = firestore.client()
-
-
-def get_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    # 두 지점 사이의 거리 계산
-    coords1 = (lat1, lon1)
-    coords2 = (lat2, lon2)
-    return round(distance(coords1, coords2).m, 3)
 
 
 class Node:
@@ -45,10 +40,41 @@ class Node:
 
     def __lt__(self, other):
         return self.f < other.f
-    
+
     def __eq__(self, other):
         return self.id == other.id
 
+
+def create_node_map(collection_ref: CollectionReference):
+    # Firestore에서 노드 맵 생성
+    # node_map = {int(doc.id): Node(int(doc.id), doc.to_dict(), doc.to_dict()["connections"]) for doc in collection_ref.stream()}
+    # for node in node_map.values():
+    #     node.connections = {int(k): {"node": node_map[int(k)], "routes": v["routes"], "clusters": v["clusters"], "distance": v["distance"]} for k, v in node.connections.items()}
+    node_map = {}
+    for doc in collection_ref.stream():
+        node_map[int(doc.id)] = Node(int(doc.id), doc.to_dict(), doc.to_dict()["connections"])
+        if len(node_map) == 5000:
+            break
+
+    # for node in node_map.values():
+    #     node.connections = {int(k): {"node": node_map[int(k)], "routes": v["routes"], "clusters": v["clusters"], "distance": v["distance"]} for k, v in node.connections.items()}
+
+    return node_map
+
+
+def create_node(collection_ref: CollectionReference, id: int) -> Node:
+    # Firestore에서 노드 생성
+    doc = collection_ref.document(str(id)).get()
+    inner_dict = doc.to_dict()
+    node = Node(int(id), {"lat": inner_dict["lat"], "lon": inner_dict["lon"]}, inner_dict["connections"])
+    return node
+
+
+def get_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    # 두 지점 사이의 거리 계산
+    coords1 = (lat1, lon1)
+    coords2 = (lat2, lon2)
+    return round(distance(coords1, coords2).m, 3)
 
 
 def heuristic_Manhattan_distance(cur_node: Node, end_node: Node) -> float:
@@ -125,6 +151,7 @@ def astar_road_finder(collection_ref: CollectionReference, start_node: Node, end
         message="No route was found between the start and end points.",
     )
 
+
 def astar_road_finder2(start_node: Node, end_node: Node, user_taste: bool, user_group: str, group_preference: List) -> AStarReturn:
     # A* 알고리즘을 사용하여 시작 노드에서 도착 노드까지의 최단 경로 찾기
     open_list: List[Node] = []
@@ -163,7 +190,7 @@ def astar_road_finder2(start_node: Node, end_node: Node, user_taste: bool, user_
             new_node.parent = cur_node
             heapq.heappush(open_list, new_node)
 
-    #길이 연결되지 않았으면 에러 발생
+    # 길이 연결되지 않았으면 에러 발생
     raise https_fn.HttpsError(
         code=https_fn.FunctionsErrorCode.INTERNAL,
         message="No route was found between the start and end points.",
@@ -202,28 +229,13 @@ def get_nearest_node(collection_ref: CollectionReference, lat: float, lon: float
     return (node_min_id, min)
 
 
-def create_node_map(collection_ref: CollectionReference) -> dict[int, Node]:
-    # Firestore에서 노드 맵 생성
-    node_map = {int(doc.id): Node(int(doc.id), doc.to_dict(), doc.to_dict()["connections"]) for doc in collection_ref.stream()}
-    for node in node_map.values():
-        node.connections = {int(k): {"node": node_map[int(k)],"routes": v["routes"], "clusters": v["clusters"], "distance": v["distance"]} for k, v in node.connections.items()}
-    return node_map
-
-
-def create_node(collection_ref: CollectionReference, id: int) -> Node:
-    # Firestore에서 노드 생성
-    doc = collection_ref.document(str(id)).get()
-    inner_dict = doc.to_dict()
-    node = Node(int(id), {"lat": inner_dict["lat"], "lon": inner_dict["lon"]}, inner_dict["connections"])
-    return node
-
-def create_node2(nodemap: dict[int,Node], id: int) -> Node:
+def create_node2(nodemap: dict[int, Node], id: int) -> Node:
     # Firestore에서 노드 생성
     node = nodemap[id]
     return node
 
 
-@https_fn.on_call(timeout_sec=120, memory=options.MemoryOption.MB_512)
+@https_fn.on_call(timeout_sec=120, memory=options.MemoryOption.GB_1)
 def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
         start_point = req.data["StartPoint"]
@@ -294,7 +306,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
     try:  # 시작노드-도착노드 길찾기
-        result = astar_road_finder(collection_ref,start_node=nearest_start_node, end_node=nearest_end_node, user_taste=user_taste, user_group=user_group, group_preference=[])
+        result = astar_road_finder(collection_ref, start_node=nearest_start_node, end_node=nearest_end_node, user_taste=user_taste, user_group=user_group, group_preference=[])
     except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
@@ -316,7 +328,7 @@ def request_route(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
 
-@https_fn.on_call(min_instances=1, timeout_sec=120, memory=options.MemoryOption.MB_512)
+@https_fn.on_call(min_instances=1, timeout_sec=120, memory=options.MemoryOption.GB_1)
 def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
     try:  # 요청 데이터 파싱
         start_point = req.data["StartPoint"]
@@ -412,7 +424,7 @@ def request_route_debug(req: https_fn.CallableRequest) -> RequestRouteReturn:
         )
 
 
-@https_fn.on_call(memory=options.MemoryOption.MB_512)
+@https_fn.on_call(memory=options.MemoryOption.GB_1)
 def generate_custom_token(request: https_fn.CallableRequest):
     try:
         user_id = request.data["token"]
@@ -440,7 +452,7 @@ class User:
 
 
 # 클러스터링 진행하는 코드
-@scheduler_fn.on_schedule(schedule="0 0 * * 0", timezone=ZoneInfo("Asia/Seoul"), memory=options.MemoryOption.MB_512)
+@scheduler_fn.on_schedule(schedule="0 0 * * 0", timezone=ZoneInfo("Asia/Seoul"), memory=options.MemoryOption.GB_1)
 def cluster_users(event: scheduler_fn.ScheduledEvent):
     users_ref = firestore_client.collection("users")
 
@@ -493,7 +505,7 @@ def cluster_users(event: scheduler_fn.ScheduledEvent):
             firestore_client.collection("Clusters").document(str(i)).set(data)
 
 
-@on_document_updated(document="users/{user_id}", memory=options.MemoryOption.MB_512)
+@on_document_updated(document="users/{user_id}", memory=options.MemoryOption.GB_1)
 def assign_label(event) -> None:
     new_value = event.data.after
     prev_value = event.data.before
@@ -516,6 +528,80 @@ def assign_label(event) -> None:
     firestore_client.collection("users").document(user_id).update({"label": int(label)})
 
 
-@https_fn.on_call(memory=options.MemoryOption.MB_512)
+@https_fn.on_call(memory=options.MemoryOption.GB_1)
 def debug(req: https_fn.CallableRequest) -> Dict[str, str]:
-    return {"message": "Hello, World!"}
+    collection_ref = firestore_client.collection("map_data_songdo_v2")
+    # time = timeit.timeit(lambda: create_node_map(collection_ref), number=1)
+    time = timeit.timeit(lambda: create_node(collection_ref, 10023181016), number=1)
+    return {"message": f"Execution time: {time}"}
+
+
+@https_fn.on_call()
+def update_feedback(req: https_fn.CallableRequest):
+    """
+    connection: {node1: str, node2: str}
+    label: str
+    pref: {'i': int} for i in range(8)
+    """
+    try:  # 요청 데이터 파싱
+        connection = req.data["connection"]
+        label = req.data["label"]
+        pref = req.data["pref"]
+
+    except KeyError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=(f"Missing argument '{e}' in request data."),
+        )
+
+    node1 = connection["node1"]
+    node2 = connection["node2"]
+
+    # node1 문서에 적힌 node2와의 connection 정보를 먼저 갱신
+    doc_ref = firestore_client.collection("map_data_songdo_v2").document(node1)
+    feedback_data = doc_ref.select([f"connections.{node2}.clusters.{label}.feedback"]).get().to_dict()
+    attributes_data = doc_ref.select([f"connections.{node2}.clusters.{label}.attributes"]).get().to_dict()
+    new_attributes = deepcopy(attributes_data)
+
+    for i in range(8):
+        if pref[str(i)] == 1:
+            feedback_data[str(i)] += 1
+            if feedback_data[str(i)] == 30:
+                feedback_data[str(i)] = 0
+                new_attributes[str(i)] = min(1, new_attributes[str(i)] + 0.01)
+        if pref[str(i)] == -1:
+            feedback_data[str(i)] -= 1
+            if feedback_data[str(i)] == -30:
+                feedback_data[str(i)] = 0
+                new_attributes[str(i)] = max(0, new_attributes[str(i)] - 0.01)
+
+    doc_ref.update({f"connections.{node2}.clusters.{label}.feedback": feedback_data})
+    firestore_client.collection("map_data_songdo_v2").document(node2).update({f"connections.{node1}.clusters.{label}.feedback": feedback_data})
+    if new_attributes != attributes_data:
+        doc_ref.update({f"connections.{node2}.clusters.{label}.attributes": new_attributes})
+        firestore_client.collection("map_data_songdo_v2").document(node2).update({f"connections.{node1}.clusters.{label}.attributes": new_attributes})
+
+
+@https_fn.on_call(memory=options.MemoryOption.GB_1)
+def get_rankings(req: https_fn.CallableRequest):
+    try:  # 요청 데이터 파싱
+        uid = req.data["uid"]
+    except KeyError as e:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=(f"Missing argument '{e}' in request data."),
+        )
+
+    user_ref = firestore_client.collection("users").document(uid)
+    user_data = user_ref.get().to_dict()
+    all_users = firestore_client.collection("users").order_by("totaldistance").stream()
+    ranking = -1
+    top_10_users = []
+    for i, user in enumerate(all_users):
+        if i < 10:
+            top_10_users.append(user.to_dict())
+        if user.id == uid:
+            ranking = i + 1
+            break
+
+    return {"ranking": ranking, "totaldistance": user_data["totaldistance"], "top_10_users": top_10_users}
