@@ -9,7 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
-import 'modal.dart';
+import 'retention/modal.dart';
 import 'navigation.dart';
 import 'navigation_utils.dart';
 import 'route_selector.dart';
@@ -509,7 +509,7 @@ class _SearchState extends State<Search> {
                   child: const Text('안내 시작'),
                 ),
               ),
-            Positioned(
+            /*Positioned(
               // Button for debugging
               bottom: 50,
               left: 0,
@@ -534,7 +534,7 @@ class _SearchState extends State<Search> {
                 },
                 child: const Text('Debug'),
               ),
-            ),
+            ),*/
           ],
         ),
       ),
