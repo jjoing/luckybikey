@@ -9,7 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
-import 'modal.dart';
+import 'retention/modal.dart';
 import 'navigation.dart';
 import 'navigation_utils.dart';
 import 'route_selector.dart';
