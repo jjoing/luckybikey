@@ -80,6 +80,7 @@ flutter:
   assets:
     - assets/images/bike.gif
     - assets/images/share_bike_logo.jpeg
+    - assets/images/arrow.png
     - assets/way_coordinates_data.json
     - assets/public_bike_locations.csv
     - assets/images/kakao_login.png

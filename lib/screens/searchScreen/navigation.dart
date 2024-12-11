@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -9,6 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'navigation_utils.dart';
 import 'feedback/tap_widget.dart';
+import '../../utils/providers/feedback_provider.dart';
 
 class Navigation extends StatefulWidget {
   const Navigation({
@@ -33,6 +35,7 @@ class _NavigationState extends State<Navigation> {
   Map<String, dynamic> navState = {};
   NaverMapController? ct;
   Timer? timer;
+  FeedbackProvider? feedbackProvider;
 
   @override
   void dispose() {
@@ -59,6 +62,7 @@ class _NavigationState extends State<Navigation> {
       "finishFlag": false,
       "toggleFeedback": false,
       "toggleTime": 0,
+      "time": 0,
     };
 
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -67,7 +71,8 @@ class _NavigationState extends State<Navigation> {
       setState(() {
         navState = updateNavState(navState, t.tick.toDouble(), ct, widget.tts);
         if (navState['toggleFeedback']) {
-          showFeedbackDialogue(context);
+          feedbackProvider?.resetPop();
+          showFeedbackDialogue(context, feedbackProvider!);
           navState['toggleFeedback'] = false;
         }
 
@@ -77,6 +82,10 @@ class _NavigationState extends State<Navigation> {
             navState['ProjectedPosition']['latitude'],
             navState['ProjectedPosition']['longitude'],
           ),
+          anchor: const NPoint(0.5, 0.5),
+          size: const Size(40, 40),
+          //iconTintColor: const Color.fromARGB(255, 214, 0, 0),
+          icon: const NOverlayImage.fromAssetImage('assets/images/arrow.png'),
         );
         NMarker marker2 = NMarker(
           id: 'test2',
@@ -122,12 +131,13 @@ class _NavigationState extends State<Navigation> {
     });
   }
 
-  void showFeedbackDialogue(BuildContext context) {
+  void showFeedbackDialogue(
+      BuildContext context, FeedbackProvider feedbackProvider) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         Future.delayed(const Duration(seconds: 8), () {
-          Navigator.of(context).pop();
+          if (!feedbackProvider.hasPopped) Navigator.of(context).pop();
         });
 
         return tapWidget(
@@ -143,6 +153,7 @@ class _NavigationState extends State<Navigation> {
   @override
   Widget build(BuildContext context) {
     final Completer<NaverMapController> mapControllerCompleter = Completer();
+    feedbackProvider = Provider.of<FeedbackProvider>(context);
     return Dialog(
       insetPadding: const EdgeInsets.all(0),
       child: Stack(
