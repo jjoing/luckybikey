@@ -114,23 +114,23 @@ class _RankingCardState extends State<RankingCard> {
                       children: [
                         if (kakaoLoginProvider.user?.kakaoAccount?.profile?.profileImageUrl != null)
                           Container(
-                            width: 80,
-                            height: 80,
+                            width: 75,
+                            height: 75,
                             child: Image.network(
                               kakaoLoginProvider.user?.kakaoAccount?.profile?.profileImageUrl ?? '',
                               fit: BoxFit.contain,
                             ),
                           ),
-                        SizedBox(width: 10,),
+                        SizedBox(width: 15,),
                         Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('이름: $fullName', style: TextStyle(fontSize: 18),),
+                            Text('이름: $fullName', style: TextStyle(fontSize: 16),),
                             SizedBox(height: 5,),
-                            Text('주행 거리: ${totalDistance / 1000} km', style: TextStyle(fontSize: 18)),
+                            Text('주행 거리: ${totalDistance / 1000} km', style: TextStyle(fontSize: 16)),
                             SizedBox(height: 5,),
-                            Text('순위: $ranking',style: TextStyle(fontSize: 18)),
+                            Text('순위: $ranking',style: TextStyle(fontSize: 16)),
 
                           ],
                         ),
