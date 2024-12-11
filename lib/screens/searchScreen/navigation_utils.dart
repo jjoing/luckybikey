@@ -32,7 +32,7 @@ Map<String, dynamic> updateNavState(Map<String, dynamic> navState, double tick,
   );
 
   if (distanceDelta < 5 &&
-      tick - navState['toggleTime'] > 30 &&
+      tick - navState['toggleTime'] > 10 &&
       navState['finishFlag'] == false) {
     navState['toggleFeedback'] = true;
     navState['toggleTime'] = tick;
@@ -615,6 +615,7 @@ void _requestRoute(req, routeSelectorProvider) async {
 
   await Future.forEach(calls, (call) async {
     // Remove [calls[0]] to use all preferences route
+    call["LoadMap"] = false;
     final results = await FirebaseFunctions.instance
         .httpsCallable('request_route_debug')
         .call(call);

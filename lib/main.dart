@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:luckybiky/utils/providers/route_selector_provider.dart';
 import 'firebase_options.dart';
 
 import 'package:animated_splash_screen/animated_splash_screen.dart';
@@ -15,6 +14,8 @@ import 'utils/mapAPI.dart';
 import 'utils/providers/page_provider.dart';
 import 'utils/providers/preference_provider.dart';
 import 'utils/providers/kakao_login_provider.dart';
+import 'utils/providers/route_selector_provider.dart';
+import 'utils/providers/feedback_provider.dart';
 
 import 'screens/home.dart';
 import 'screens/searchScreen/search.dart';
@@ -42,6 +43,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PreferenceProvider()),
         ChangeNotifierProvider(create: (_) => KakaoLoginProvider()),
         ChangeNotifierProvider(create: (_) => RouteSelectorProvider()),
+        ChangeNotifierProvider(create: (_) => FeedbackProvider()),
       ],
       child: SplashScreen(),
     ),

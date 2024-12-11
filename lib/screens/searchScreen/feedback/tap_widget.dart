@@ -5,6 +5,8 @@ import 'feedback_function.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../../../utils/providers/feedback_provider.dart';
+import 'package:provider/provider.dart';
 
 class tapWidget extends StatefulWidget {
   const tapWidget({
@@ -27,21 +29,23 @@ class tapWidget extends StatefulWidget {
 class _tapWidgetState extends State<tapWidget> {
   String userGroup = '';
   int featureIndex = 0;
+  bool resetToggle = true;
 
   final List<String> featureTexts = [
-    '이 길의 풍경이 만족스럽다면 더블탭 해주세요!',
-    '이 길이 안전하다면 더블탭 해주세요!',
-    '이 길의 현재 통행량이 많으면 더블탭 해주세요!',
-    '이 길이 빠르다고 생각하신다면 더블탭 해주세요!.',
-    '주행 중인 길에 신호등이 많이 없다면 더블탭 해주세요!',
-    '이 길의 오르막이 심하면 더블탭 해주세요!',
-    '이 길이 안전하다고 생각되면 더블탭 해주세요!',
-    '이 길이 자전거길이라면 더블탭 해주세요!'
+    '이 길의 풍경이 만족스럽다면 \n더블탭 해주세요!',
+    '이 길이 안전하다면 \n더블탭 해주세요!',
+    '이 길의 현재 통행량이 \n많으면 더블탭 해주세요!',
+    '이 길이 빠르다고 생각하신다면 \n더블탭 해주세요!.',
+    '주행 중인 길에 \n신호등이 많이 없다면 \n더블탭 해주세요!',
+    '이 길의 오르막이 심하면 \n더블탭 해주세요!',
+    '이 길이 안전하다고 생각되면 \n더블탭 해주세요!',
+    '이 길이 자전거길이라면\n더블탭 해주세요!'
   ];
 
   @override
   void initState() {
     super.initState();
+    resetToggle = true;
     widget.firestore
         .collection('users')
         .doc(widget.authentication.currentUser?.uid)
@@ -54,14 +58,21 @@ class _tapWidgetState extends State<tapWidget> {
 
   @override
   Widget build(BuildContext context) {
-    featureIndex = Random().nextInt(8);
-    widget.tts.speak(featureTexts[featureIndex]);
-    print('tts : ${featureTexts[featureIndex]}');
+    final FeedbackProvider feedbackProvider =
+        Provider.of<FeedbackProvider>(context);
+    if (resetToggle) {
+      featureIndex = Random().nextInt(8);
+      widget.tts.speak(featureTexts[featureIndex]);
+      print('tts : ${featureTexts[featureIndex]}');
+    }
 
     return GestureDetector(
         // 피드백으로 더블탭 감지 시 feedback 함수 실행
         onDoubleTap: () {
           feedback(widget.navState, userGroup, featureIndex);
+          resetToggle = false;
+          feedbackProvider.pop();
+          Navigator.of(context).pop();
         },
 
         // 피드백을 감지하기 위한 double tap 영역
@@ -90,7 +101,7 @@ class _tapWidgetState extends State<tapWidget> {
                     : 'Double Tap here if you are satisfied with your road!!',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.8),
-                  fontSize: 30,
+                  fontSize: 25,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
