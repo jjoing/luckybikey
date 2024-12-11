@@ -87,21 +87,21 @@ class _NavigationState extends State<Navigation> {
           //iconTintColor: const Color.fromARGB(255, 214, 0, 0),
           icon: const NOverlayImage.fromAssetImage('assets/images/arrow.png'),
         );
-        NMarker marker2 = NMarker(
-          id: 'test2',
-          position: NLatLng(
-            navState['CurrentPosition']['latitude'],
-            navState['CurrentPosition']['longitude'],
-          ),
-        );
-        NMarker marker3 = NMarker(
-          id: 'test3',
-          position: NLatLng(
-            navState['Route'][navState['CurrentIndex']]['NLatLng'].latitude,
-            navState['Route'][navState['CurrentIndex']]['NLatLng'].longitude,
-          ),
-        );
-        ct?.addOverlayAll({marker1, marker2, marker3});
+        // NMarker marker2 = NMarker(
+        //   id: 'test2',
+        //   position: NLatLng(
+        //     navState['CurrentPosition']['latitude'],
+        //     navState['CurrentPosition']['longitude'],
+        //   ),
+        // );
+        // NMarker marker3 = NMarker(
+        //   id: 'test3',
+        //   position: NLatLng(
+        //     navState['Route'][navState['CurrentIndex']]['NLatLng'].latitude,
+        //     navState['Route'][navState['CurrentIndex']]['NLatLng'].longitude,
+        //   ),
+        // );
+        ct?.addOverlayAll({marker1});
         ct?.updateCamera(NCameraUpdate.withParams(
           target: NLatLng(
             navState['ProjectedPosition']['latitude'],
@@ -178,14 +178,14 @@ class _NavigationState extends State<Navigation> {
               contentPadding: const EdgeInsets.all(10),
             ),
             forceGesture: true,
-            onMapTapped: (point, latLng) {
-              setState(() {
-                navState['CurrentPosition'] = {
-                  'latitude': latLng.latitude,
-                  'longitude': latLng.longitude,
-                };
-              });
-            },
+            // onMapTapped: (point, latLng) {
+            //   setState(() {
+            //     navState['CurrentPosition'] = {
+            //       'latitude': latLng.latitude,
+            //       'longitude': latLng.longitude,
+            //     };
+            //   });
+            // },
             onMapReady: (controller) {
               mapControllerCompleter.complete(controller);
               setState(() {

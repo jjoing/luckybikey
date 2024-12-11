@@ -17,12 +17,12 @@ Map<String, dynamic> updateNavState(Map<String, dynamic> navState, double tick,
     NaverMapController? ct, FlutterTts tts) {
   Map beforePosition = navState['CurrentPosition'];
 
-  // _determinePosition().then((value) {
-  //   navState['CurrentPosition'] = {
-  //     'latitude': value.latitude,
-  //     'longitude': value.longitude,
-  //   };
-  // });
+  _determinePosition().then((value) {
+    navState['CurrentPosition'] = {
+      'latitude': value.latitude,
+      'longitude': value.longitude,
+    };
+  });
 
   final distanceDelta = calculateDistance(
     beforePosition['latitude'],
@@ -32,7 +32,7 @@ Map<String, dynamic> updateNavState(Map<String, dynamic> navState, double tick,
   );
 
   if (distanceDelta < 5 &&
-      tick - navState['toggleTime'] > 10 &&
+      tick - navState['toggleTime'] > 30 &&
       navState['finishFlag'] == false) {
     navState['toggleFeedback'] = true;
     navState['toggleTime'] = tick;
@@ -529,6 +529,7 @@ void _requestRoute(req, routeSelectorProvider) async {
     "UserTaste": true,
     "UserGroup": req['UserGroup'],
     "GroupPreference": req['GroupPreference'],
+    "LoadMap": false,
   });
 
   // Fastest route
@@ -545,6 +546,7 @@ void _requestRoute(req, routeSelectorProvider) async {
     "UserTaste": false,
     "UserGroup": req['UserGroup'],
     "GroupPreference": req['GroupPreference'],
+    "LoadMap": false,
   });
 
   // 풍경 좋은 경로
@@ -567,6 +569,7 @@ void _requestRoute(req, routeSelectorProvider) async {
         return 0.0;
       }
     }),
+    "LoadMap": false,
   });
 
   // 큰 길
@@ -589,6 +592,7 @@ void _requestRoute(req, routeSelectorProvider) async {
         return 0.0;
       }
     }),
+    "LoadMap": false,
   });
 
   // 자전거 길
@@ -611,11 +615,11 @@ void _requestRoute(req, routeSelectorProvider) async {
         return 0.0;
       }
     }),
+    "LoadMap": false,
   });
 
   await Future.forEach(calls, (call) async {
     // Remove [calls[0]] to use all preferences route
-    call["LoadMap"] = false;
     final results = await FirebaseFunctions.instance
         .httpsCallable('request_route_debug')
         .call(call);
@@ -656,6 +660,7 @@ void _requestRoutePublic(reqs, routeSelectorProvider) async {
         "UserTaste": true,
         "UserGroup": req['UserGroup'],
         "GroupPreference": req['GroupPreference'],
+        "LoadMap": false,
       };
     }),
   );
@@ -677,6 +682,7 @@ void _requestRoutePublic(reqs, routeSelectorProvider) async {
         "UserTaste": false,
         "UserGroup": req['UserGroup'],
         "GroupPreference": req['GroupPreference'],
+        "LoadMap": false,
       };
     }),
   );
@@ -704,6 +710,7 @@ void _requestRoutePublic(reqs, routeSelectorProvider) async {
             return 0.0;
           }
         }),
+        "LoadMap": false,
       };
     }),
   );
@@ -731,6 +738,7 @@ void _requestRoutePublic(reqs, routeSelectorProvider) async {
             return 0.0;
           }
         }),
+        "LoadMap": false,
       };
     }),
   );
@@ -758,6 +766,7 @@ void _requestRoutePublic(reqs, routeSelectorProvider) async {
             return 0.0;
           }
         }),
+        "LoadMap": false,
       };
     }),
   );
