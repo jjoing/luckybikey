@@ -23,7 +23,7 @@ class Profile extends StatelessWidget {
     final pageProvider = Provider.of<PageProvider>(context, listen: false);
     final kakaoLoginProvider = Provider.of<KakaoLoginProvider>(context);
 
-    final viewModel = MainViewModel(KakaoLogin());
+    //final viewModel = MainViewModel(KakaoLogin());
 
     return Scaffold(
       body: SingleChildScrollView(

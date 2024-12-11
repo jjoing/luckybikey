@@ -383,7 +383,7 @@ class _SearchState extends State<Search> {
                   ),
                   const SizedBox(height: 20),
                   Container(
-                    height: MediaQuery.of(context).size.height * 0.6,
+                    height: MediaQuery.of(context).size.height * 0.55,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -451,7 +451,7 @@ class _SearchState extends State<Search> {
               ),
             ),
             const Positioned(
-              bottom: 50,
+              bottom: 15,
               left: 0,
               right: 0,
               child: Center(child: ModalContent()),
