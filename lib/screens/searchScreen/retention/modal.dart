@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'ranking_card.dart';
+
 final _firestore = FirebaseFirestore.instance;
 final _authentication = FirebaseAuth.instance;
 
@@ -21,7 +23,7 @@ class _ModalContentState extends State<ModalContent> {
   @override
   void initState() {
     super.initState();
-    _fetchUserData(); // Firestore에서 데이터 가져오기
+    _fetchUserData();// Firestore에서 데이터 가져오기
   }
 
   Future<void> _fetchUserData() async {
@@ -54,7 +56,11 @@ class _ModalContentState extends State<ModalContent> {
   Widget build(BuildContext context) {
     return Center(
       child: ElevatedButton(
-        child: Text('$fullName님의 순위 보기'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.lightGreen[400],
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30,),
+        ),
+        child: Text('$fullName님의 순위 보기 !', style: TextStyle(color: Colors.white),),
         onPressed: () {
           showModalBottomSheet<void>(
             context: context,
@@ -66,7 +72,7 @@ class _ModalContentState extends State<ModalContent> {
             ),
             builder: (BuildContext context) {
               return Container(
-                height: 200,
+                height: MediaQuery.of(context).size.height*0.25,
                 color: Colors.transparent,
                 child: Center(
                   child: Column(
@@ -75,20 +81,34 @@ class _ModalContentState extends State<ModalContent> {
                     children: <Widget>[
                       // Firestore 데이터를 표시
                       Text(
-                        '$fullName님은 현재 ${totalDistance/1000} km 주행 중!',
+                        '$fullName님은 현재 ${totalDistance/1000} km 주행 중~',
                         style: TextStyle(
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      SizedBox(height: 5,),
+                      TextButton(
+                        onPressed: () {
+                          // Dialog를 띄우는 코드
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return RankingCard();
+                            },
+                          );
+                        },
+                        child: Text('순위 카드 보기'),
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.lightGreen,
+                          backgroundColor: Colors.lightGreen[400],
                           padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
                         ),
                         onPressed: () => Navigator.pop(context),
                         child: const Text(
-                          '지금 달리러 가기!',
+                          '지금 달리러 가기 !',
                           style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
