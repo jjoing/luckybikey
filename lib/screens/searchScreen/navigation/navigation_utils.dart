@@ -2,16 +2,13 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
+
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import './feedback/feedback_function.dart';
 
-import '../../utils/mapAPI.dart';
+import '../../../utils/mapAPI.dart';
 
 Map<String, dynamic> updateNavState(Map<String, dynamic> navState, double tick,
     NaverMapController? ct, FlutterTts tts) {
@@ -444,74 +441,6 @@ Map<String, dynamic> _getClosestPublicBikeStation(
 }
 
 void _requestRoute(req, routeSelectorProvider) async {
-  // final List<Map<String, dynamic>> calls = List.generate(8, (index) {
-  //   final List<double> groupPrefernce = List<double>.generate(8, (i) {
-  //     if (i == index) {
-  //       return req['GroupPreference'][i];
-  //     } else {
-  //       return 0.0;
-  //     }
-  //   });
-  //   return {
-  //     "Index": index + 2,
-  //     "StartPoint": {
-  //       "lat": req['StartPoint']['lat'],
-  //       "lon": req['StartPoint']['lon']
-  //     },
-  //     "EndPoint": {
-  //       "lat": req['EndPoint']['lat'],
-  //       "lon": req['EndPoint']['lon']
-  //     },
-  //     "UserTaste": true,
-  //     "UserGroup": req['UserGroup'],
-  //     "GroupPreference": groupPrefernce,
-  //   };
-  // });
-  // // All preferences route
-  // calls.insert(0, {
-  //   "Index": 1,
-  //   "StartPoint": {
-  //     "lat": req['StartPoint']['lat'],
-  //     "lon": req['StartPoint']['lon'],
-  //   },
-  //   "EndPoint": {
-  //     "lat": req['EndPoint']['lat'],
-  //     "lon": req['EndPoint']['lon'],
-  //   },
-  //   "UserTaste": true,
-  //   "UserGroup": req['UserGroup'],
-  //   "GroupPreference": req['GroupPreference'],
-  // });
-  // // Fastest route
-  // calls.insert(0, {
-  //   "Index": 0,
-  //   "StartPoint": {
-  //     "lat": req['StartPoint']['lat'],
-  //     "lon": req['StartPoint']['lon'],
-  //   },
-  //   "EndPoint": {
-  //     "lat": req['EndPoint']['lat'],
-  //     "lon": req['EndPoint']['lon'],
-  //   },
-  //   "UserTaste": false,
-  //   "UserGroup": req['UserGroup'],
-  //   "GroupPreference": req['GroupPreference'],
-  // });
-
-  // print([calls[0]]);
-
-  // List<Map<String, dynamic>> resultRoute = [
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {}
-  // ];
 
   final List<Map<String, dynamic>> calls = [];
 
@@ -912,78 +841,3 @@ List<int> getRandomIndex(int length) {
   return randomIndex;
 }
 
-class Navigationend extends StatefulWidget {
-  const Navigationend({
-    Key? key,
-    required this.fullDistance,
-    required this.tick,
-    required this.firestore,
-    required this.authentication,
-  }) : super(key: key);
-
-  final double fullDistance;
-  final double tick;
-  final FirebaseFirestore firestore;
-  final FirebaseAuth authentication;
-
-  @override
-  NavigationendState createState() => NavigationendState();
-}
-
-class NavigationendState extends State<Navigationend> {
-  int rating = 0;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('안내 종료'),
-      content: SizedBox(
-        height: 400,
-        child: Column(
-          children: <Widget>[
-            const Text('목적지에 도착했습니다'),
-            Text('총 이동거리: ${widget.fullDistance.round()}m'),
-            Text('총 소요시간: ${(widget.tick * 3 / 60).round()}분'),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (index) {
-                return IconButton(
-                  icon: Icon(rating > index ? Icons.star : Icons.star_border,
-                      color: Colors.amber, size: 40.0),
-                  onPressed: () {
-                    setState(() {
-                      rating = index + 1;
-                      print(rating);
-                    });
-                  },
-                );
-              }),
-            )
-          ],
-        ),
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () {
-            widget.firestore //TODO: Better Feedback
-                .collection('users')
-                .doc(widget.authentication.currentUser!.uid)
-                .update({
-              'rating': rating,
-              'totalDistance': FieldValue.increment(
-                  widget.fullDistance.round()), //widget에 fulldistance가 현재 0
-            });
-            Navigator.pop(context);
-            Navigator.pop(context);
-          },
-          child: const Text('확인'),
-        ),
-      ],
-    );
-  }
-}

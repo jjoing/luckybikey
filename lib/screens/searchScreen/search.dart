@@ -10,9 +10,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
 import 'retention/modal.dart';
-import 'navigation.dart';
-import 'navigation_utils.dart';
-import 'route_selector.dart';
+import 'navigation/navigation.dart';
+import 'navigation/navigation_utils.dart';
+import 'navigation/route_selector.dart';
 import '../../components/bottomNaviBar.dart';
 import '../../../utils/providers/route_selector_provider.dart';
 import '../../../utils/providers/kakao_login_provider.dart';
