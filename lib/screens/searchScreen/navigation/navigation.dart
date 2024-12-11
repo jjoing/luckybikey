@@ -9,8 +9,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'navigation_utils.dart';
-import 'feedback/tap_widget.dart';
-import '../../utils/providers/feedback_provider.dart';
+import '../feedback/tap_widget.dart';
+import '../feedback/navigation_end.dart';
+import '../../../utils/providers/feedback_provider.dart';
 
 class Navigation extends StatefulWidget {
   const Navigation({
