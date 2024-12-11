@@ -79,6 +79,7 @@ class _RouteSelectorState extends State<RouteSelector> {
                       padding: const EdgeInsets.all(50),
                     ));
                     routeSelectorProvider.setSelectedIndex(index);
+
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width * 0.35,
@@ -87,6 +88,7 @@ class _RouteSelectorState extends State<RouteSelector> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: (routeSelectorProvider.selectedIndex == index) ? Colors.blueAccent : Colors.transparent),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.5),
