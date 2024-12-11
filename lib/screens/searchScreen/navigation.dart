@@ -33,7 +33,6 @@ class _NavigationState extends State<Navigation> {
   Map<String, dynamic> navState = {};
   NaverMapController? ct;
   Timer? timer;
-  bool toggleFeedback = true;
 
   @override
   void dispose() {
@@ -58,18 +57,18 @@ class _NavigationState extends State<Navigation> {
       "Angle": 0,
       "ttsFlag": [false, false, false],
       "finishFlag": false,
-      "feedbackCounter": 1,
+      "toggleFeedback": false,
+      "toggleTime": 0,
     };
 
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      print('timer');
+      print('timer: ${t.tick}');
 
       setState(() {
-        navState = updateNavState(navState, ct, widget.tts);
-        if (navState['feedbackCounter'] > 0) {
-          toggleFeedback = true;
-        } else {
-          toggleFeedback = false;
+        navState = updateNavState(navState, t.tick.toDouble(), ct, widget.tts);
+        if (navState['toggleFeedback']) {
+          showFeedbackDialogue(context);
+          navState['toggleFeedback'] = false;
         }
 
         NMarker marker1 = NMarker(
@@ -121,6 +120,24 @@ class _NavigationState extends State<Navigation> {
         timer?.cancel();
       }
     });
+  }
+
+  void showFeedbackDialogue(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        Future.delayed(const Duration(seconds: 8), () {
+          Navigator.of(context).pop();
+        });
+
+        return tapWidget(
+          navState: navState,
+          firestore: widget.firestore,
+          authentication: widget.authentication,
+          tts: widget.tts,
+        );
+      },
+    );
   }
 
   @override
@@ -182,17 +199,19 @@ class _NavigationState extends State<Navigation> {
               child: const Text('닫기'),
             ),
           ),
-          if (toggleFeedback)
-            Positioned(
-              child: Dialog(
-                surfaceTintColor: Colors.transparent.withOpacity(0.0),
-                backgroundColor: Colors.transparent.withOpacity(0.0),
-                child: tapWidget(
-                    navState: navState,
-                    firestore: widget.firestore,
-                    authentication: widget.authentication),
-              ),
-            ),
+          // if (toggleFeedback)
+          //   Positioned(
+          //     child: Dialog(
+          //       surfaceTintColor: Colors.transparent.withOpacity(0.0),
+          //       backgroundColor: Colors.transparent.withOpacity(0.0),
+          //       child: tapWidget(
+          //         navState: navState,
+          //         firestore: widget.firestore,
+          //         authentication: widget.authentication,
+          //         tts: widget.tts,
+          //       ),
+          //     ),
+          //   ),
         ],
       ),
     );

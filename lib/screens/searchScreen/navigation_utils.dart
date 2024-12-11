@@ -9,17 +9,35 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import './feedback/feedback_function.dart';
 
 import '../../utils/mapAPI.dart';
 
-Map<String, dynamic> updateNavState(
-    Map<String, dynamic> navState, NaverMapController? ct, FlutterTts tts) {
+Map<String, dynamic> updateNavState(Map<String, dynamic> navState, double tick,
+    NaverMapController? ct, FlutterTts tts) {
+  Map beforePosition = navState['CurrentPosition'];
+
   // _determinePosition().then((value) {
   //   navState['CurrentPosition'] = {
   //     'latitude': value.latitude,
   //     'longitude': value.longitude,
   //   };
   // });
+
+  final distanceDelta = calculateDistance(
+    beforePosition['latitude'],
+    beforePosition['longitude'],
+    navState['CurrentPosition']['latitude'],
+    navState['CurrentPosition']['longitude'],
+  );
+
+  if (distanceDelta < 5 &&
+      tick - navState['toggleTime'] > 30 &&
+      navState['finishFlag'] == false) {
+    navState['toggleFeedback'] = true;
+    navState['toggleTime'] = tick;
+  }
+
   //사정거리안에 들어오거나 가장 가까운 노드 찾기
   //그 노드가 연결한 Route들 중 점 직선 사이 거리가 가장 가까운 node 쌍 찾기_ (node1, node2) node1 to node2
   final newIndex = _getProjectionNodes(
@@ -873,6 +891,17 @@ Future<List<Map<String, dynamic>>> searchRequest(req) async {
   return result;
 }
 
+List<int> getRandomIndex(int length) {
+  List<int> randomIndex = [];
+  while (randomIndex.length < 10) {
+    int index = Random().nextInt(length);
+    if (!randomIndex.contains(index)) {
+      randomIndex.add(index);
+    }
+  }
+  return randomIndex;
+}
+
 class Navigationend extends StatefulWidget {
   const Navigationend({
     Key? key,
@@ -936,6 +965,8 @@ class NavigationendState extends State<Navigationend> {
                 .doc(widget.authentication.currentUser!.uid)
                 .update({
               'rating': rating,
+              'totalDistance': FieldValue.increment(
+                  widget.fullDistance.round()), //widget에 fulldistance가 현재 0
             });
             Navigator.pop(context);
             Navigator.pop(context);
