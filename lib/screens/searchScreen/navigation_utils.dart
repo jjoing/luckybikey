@@ -177,6 +177,8 @@ double _calculateTriangleDistance(double pointLat, double pointLon, double lat1,
   return distance;
 }
 
+
+
 Map<String, dynamic> _getProjectedPosition(List<Map<String, dynamic>> route,
     double currentLatitude, double currentLongitude, int projectionNodeIndex) {
   var point = route[projectionNodeIndex];
@@ -310,6 +312,23 @@ Future<Position> _determinePosition() async {
 double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
   return (450 - 180 / pi * atan2(lat2 - lat1, lon2 - lon1)) % 360;
 }
+
+List<int> getRandomIndex(int route_length) {
+  List<int> random_id = [];
+  Random random = Random();
+
+  // 1부터 route.length - 2까지의 범위에서 15개의 무작위 인덱스를 뽑기
+  Set<int> selectedIndexes = Set();
+
+  // 15개의 고유한 인덱스를 뽑기 위해 반복
+  while (selectedIndexes.length < 15) {
+    int index = random.nextInt(route_length - 4) + 1; // 1 ~ route.length - 3
+    selectedIndexes.add(index);
+  }
+
+  return selectedIndexes;
+}
+
 
 Future<List<Map<String, dynamic>>> pulicBike() async {
   final results = await http.get(Uri.parse(
@@ -449,74 +468,6 @@ Map<String, dynamic> _getClosestPublicBikeStation(
 
 Future<List<Map<String, dynamic>>> _requestRoute(
     req, routeSelectorProvider) async {
-  // final List<Map<String, dynamic>> calls = List.generate(8, (index) {
-  //   final List<double> groupPrefernce = List<double>.generate(8, (i) {
-  //     if (i == index) {
-  //       return req['GroupPreference'][i];
-  //     } else {
-  //       return 0.0;
-  //     }
-  //   });
-  //   return {
-  //     "Index": index + 2,
-  //     "StartPoint": {
-  //       "lat": req['StartPoint']['lat'],
-  //       "lon": req['StartPoint']['lon']
-  //     },
-  //     "EndPoint": {
-  //       "lat": req['EndPoint']['lat'],
-  //       "lon": req['EndPoint']['lon']
-  //     },
-  //     "UserTaste": true,
-  //     "UserGroup": req['UserGroup'],
-  //     "GroupPreference": groupPrefernce,
-  //   };
-  // });
-  // // All preferences route
-  // calls.insert(0, {
-  //   "Index": 1,
-  //   "StartPoint": {
-  //     "lat": req['StartPoint']['lat'],
-  //     "lon": req['StartPoint']['lon'],
-  //   },
-  //   "EndPoint": {
-  //     "lat": req['EndPoint']['lat'],
-  //     "lon": req['EndPoint']['lon'],
-  //   },
-  //   "UserTaste": true,
-  //   "UserGroup": req['UserGroup'],
-  //   "GroupPreference": req['GroupPreference'],
-  // });
-  // // Fastest route
-  // calls.insert(0, {
-  //   "Index": 0,
-  //   "StartPoint": {
-  //     "lat": req['StartPoint']['lat'],
-  //     "lon": req['StartPoint']['lon'],
-  //   },
-  //   "EndPoint": {
-  //     "lat": req['EndPoint']['lat'],
-  //     "lon": req['EndPoint']['lon'],
-  //   },
-  //   "UserTaste": false,
-  //   "UserGroup": req['UserGroup'],
-  //   "GroupPreference": req['GroupPreference'],
-  // });
-
-  // print([calls[0]]);
-
-  // List<Map<String, dynamic>> resultRoute = [
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {},
-  //   {}
-  // ];
 
   final List<Map<String, dynamic>> calls = [];
   // 자전거 길
@@ -637,7 +588,8 @@ Future<List<Map<String, dynamic>>> _requestRoute(
           results.data['path'].map((point) {
             return {
               "NLatLng": NLatLng(point['lat'], point['lon']),
-              "distance": point['distance']
+              "distance": point['distance'],
+              "id" : point["node_id"]
             };
           }),
         ),
@@ -770,6 +722,20 @@ class NavigationendState extends State<Navigationend> {
 
   @override
   Widget build(BuildContext context) {
+    //route data 필요함
+    final RouteSelectorProvider routeSelectorProvider =
+        Provider.of<RouteSelectorProvider>(context);
+
+    // 선택된 경로 가져오기
+    final selectedRouteIndex = routeSelectorProvider.selectedIndex;
+    final selectedRoute = selectedRouteIndex != -1
+        ? routeSelectorProvider.resultRoute[selectedRouteIndex]
+        : null;
+
+    if (selectedRoute == null || selectedRoute.isEmpty) {
+      return const Text('No route selected');
+    }
+
     return AlertDialog(
       title: const Text('안내 종료'),
       content: SizedBox(
@@ -800,12 +766,49 @@ class NavigationendState extends State<Navigationend> {
       actions: <Widget>[
         TextButton(
           onPressed: () {
-            widget.firestore //TODO: Better Feedback
-                .collection('users')
-                .doc(widget.authentication.currentUser!.uid)
-                .update({
-              'rating': rating,
-            });
+            List<int> randomIndex = getRandomIndex(selectedRoute.length);
+            int clusterIndex = 0;
+            int newValue = 0;
+            if (rating>3){ newValue = 1;}
+            else if(rating<3) {newValue = -1;}
+            int attributeIndex = Random().nextInt(8); // TODO : Index 자체를 넘겨 받으면 좋음
+
+            // Firebase에서 각 randomIndex에 대해서 반복문을 사용해 값 업데이트
+            for (int i = 0; i < randomIndex.length; i++) {
+              int attributeIndex = Random().nextInt(8); // 0 ~ 7 중 랜덤 값
+
+              // Firebase에서 기존 값 가져오기
+              widget.firestore
+                  .collection('map_data_songdo_v2')
+                  .doc(routeData[randomIndex[i]]['id'])
+                  .get()
+                  .then((docSnapshot) {
+                if (docSnapshot.exists) {
+                  // 해당 경로에서 현재 값을 가져옵니다.
+                  final currentValue = docSnapshot.get(
+                      '${routeData[randomIndex[i]]['id']}/clusters/$clusterIndex/feedback/$attributeIndex');
+
+                  // 기존 값에 1을 더합니다.
+                  final updatedValue = currentValue + newValue;
+
+                  // 값 업데이트
+                  widget.firestore
+                      .collection('map_data_songdo_v2')
+                      .doc(routeData[randomIndex[i]]['id'])
+                      .update({
+                    '${routeData[randomIndex[i]]['id']}/clusters/$clusterIndex/feedback/$attributeIndex': updatedValue,
+                  }).then((_) {
+                    print("Attribute updated successfully for index $i");
+                  }).catchError((error) {
+                    print("Failed to update attribute for index $i: $error");
+                  });
+                } else {
+                  print("Document does not exist for index $i");
+                }
+              });
+            }
+
+
             Navigator.pop(context);
             Navigator.pop(context);
           },
@@ -815,128 +818,3 @@ class NavigationendState extends State<Navigationend> {
     );
   }
 }
-
-// class RouteProvider with ChangeNotifier {
-//   List<Map<String, dynamic>> routeResult = [{}, {}, {}, {}, {}, {}, {}];
-
-//   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-//   final FirebaseAuth authentication = FirebaseAuth.instance;
-
-//   void setRouteResult(Map<String, dynamic> result, index) {
-//     routeResult[index] = result;
-//     notifyListeners();
-//   }
-// }
-
-// class RouteResult extends StatefulWidget {
-//   const RouteResult({
-//     Key? key,
-//     required this.searchResult,
-//     required this.usePublicBike,
-//     required this.publicBikes,
-//     required this.firestore,
-//     required this.authentication,
-//   }) : super(key: key);
-
-//   final List<Map<String, dynamic>> searchResult;
-//   final bool usePublicBike;
-//   final List<Map<String, dynamic>> publicBikes;
-//   final FirebaseFirestore firestore;
-//   final FirebaseAuth authentication;
-
-//   @override
-//   RouteResultState createState() => RouteResultState();
-// }
-
-// class RouteResultState extends State<RouteResult> {
-//   @override
-//   void initState() {
-//     super.initState();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Container(
-//         height: 200,
-//         child: ListView(
-//           scrollDirection: Axis.horizontal,
-//           children: <Widget>[
-//             for (var i = 0; i < widget.searchResult.length - 1; i++)
-//               FutureBuilder(
-//                 future: searchRoute(
-//                   widget.searchResult.sublist(i, i + 2),
-//                   widget.usePublicBike,
-//                   widget.publicBikes,
-//                   widget.firestore,
-//                   widget.authentication,
-//                 ),
-//                 builder: (context, snapshot) {
-//                   if (snapshot.connectionState == ConnectionState.done) {
-//                     return RouteCard(
-//                       route: snapshot.data?['route'],
-//                       fullDistance: snapshot.data?['full_distance'],
-//                       index: i,
-//                     );
-//                   } else {
-//                     return const CircularProgressIndicator();
-//                   }
-//                 },
-//               ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// class RouteCard extends StatelessWidget {
-//   const RouteCard({
-//     Key? key,
-//     required this.route,
-//     required this.fullDistance,
-//     required this.index,
-//   }) : super(key: key);
-
-//   final List<Map<String, dynamic>> route;
-//   final double fullDistance;
-//   final int index;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Card(
-//       child: Column(
-//         children: <Widget>[
-//           Text('Route $index'),
-//           Text('Distance: ${fullDistance.round()}m'),
-//           for (var i = 0; i < route.length; i++)
-//             ListTile(
-//               title: Text('Node $i'),
-//               subtitle: Text(
-//                   'Lat: ${route[i]['NLatLng'].latitude}, Lon: ${route[i]['NLatLng'].longitude}'),
-//             ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// class RouteProvider with ChangeNotifier {
-//   // Map to store the fetched route data
-//   List<Map<String, String>> _routeData = {};
-
-//   // Getter for route data
-//   List<Map<String, String>> get routeData => _routeData;
-
-//   // Function to fetch route data and store it
-//   Future<void> fetchAllRoutes(searchResult, usePublicBike, publicBikes, firestore, authentication) async {
-//     // Create a list of futures to fetch data for all routes
-//     List<Future> routeFutures = routeIds.map((routeId) => searchRoute(searchResult, usePublicBike, publicBikes, firestore, authentication).then((data) {
-//       _routeData[routeId] = data;
-//       notifyListeners(); // Notify listeners when data is updated
-//     })).toList();
-
-//     // Wait for all futures to complete
-//     await Future.wait(routeFutures);
-//   }
-// }
