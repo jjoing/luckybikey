@@ -509,7 +509,7 @@ class _SearchState extends State<Search> {
                   child: const Text('안내 시작'),
                 ),
               ),
-            Positioned(
+            /*Positioned(
               // Button for debugging
               bottom: 50,
               left: 0,
@@ -534,7 +534,7 @@ class _SearchState extends State<Search> {
                 },
                 child: const Text('Debug'),
               ),
-            ),
+            ),*/
           ],
         ),
       ),

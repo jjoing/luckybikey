@@ -74,7 +74,12 @@ class _ModalContentState extends State<ModalContent> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       // Firestore 데이터를 표시
-                      Text('$fullName님은 현재 $totalDistance km 주행 중!'),
+                      Text(
+                        '$fullName님은 현재 ${totalDistance/1000} km 주행 중!',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 20),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
