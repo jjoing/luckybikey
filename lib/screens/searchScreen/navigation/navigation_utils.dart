@@ -441,7 +441,6 @@ Map<String, dynamic> _getClosestPublicBikeStation(
 }
 
 void _requestRoute(req, routeSelectorProvider) async {
-
   final List<Map<String, dynamic>> calls = [];
 
   // All preferences route
@@ -550,7 +549,7 @@ void _requestRoute(req, routeSelectorProvider) async {
   await Future.forEach(calls, (call) async {
     // Remove [calls[0]] to use all preferences route
     final results = await FirebaseFunctions.instance
-        .httpsCallable('request_route_debug')
+        .httpsCallable('request_route')
         .call(call);
     print('results ${call['Index']}: ${results.data['full_distance']}');
     routeSelectorProvider.setRoute({
@@ -703,9 +702,8 @@ void _requestRoutePublic(reqs, routeSelectorProvider) async {
   await Future.forEach(calls, (call) async {
     // Remove [calls[0]] to use all preferences route
     final results = await Future.wait(
-      call.map((req) => FirebaseFunctions.instance
-          .httpsCallable('request_route_debug')
-          .call(req)),
+      call.map((req) =>
+          FirebaseFunctions.instance.httpsCallable('request_route').call(req)),
     );
     // 모든 route 정보 합치기
     List<Map<String, dynamic>> combinedRoute =
@@ -840,4 +838,3 @@ List<int> getRandomIndex(int length) {
   }
   return randomIndex;
 }
-

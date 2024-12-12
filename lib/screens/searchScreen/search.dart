@@ -470,16 +470,13 @@ class _SearchState extends State<Search> {
                 child: RouteSelector(ct: ct),
               ),
 
-
             if (_showRouteSelector)
               Positioned(
                 bottom: 15,
                 left: 0,
                 right: 0,
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white
-                  ),
+                  decoration: const BoxDecoration(color: Colors.white),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -487,7 +484,8 @@ class _SearchState extends State<Search> {
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.lightGreen[400],
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30,),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 30),
                         ),
                         onPressed: () {
                           setState(() {
@@ -499,7 +497,8 @@ class _SearchState extends State<Search> {
                                 context: context,
                                 builder: (BuildContext context) {
                                   return Navigation(
-                                    routeInfo: routeSelectorProvider.resultRoute[
+                                    routeInfo: routeSelectorProvider
+                                            .resultRoute[
                                         routeSelectorProvider.selectedIndex],
                                     tts: tts,
                                     firestore: _firestore,
@@ -510,29 +509,38 @@ class _SearchState extends State<Search> {
                             }
                           });
                         },
-                        child: const Text('이 경로로 안내 시작', style: TextStyle(color: Colors.white),),
+                        child: const Text(
+                          '이 경로로 안내 시작',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
 
                       // 경로 리스트 보여주는 거 없애는 버튼
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey,
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30,),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 30,
+                          ),
                         ),
                         onPressed: () {
                           setState(() {
                             _showRouteSelector = false;
                             ct?.deleteOverlay(const NOverlayInfo(
-                                type: NOverlayType.pathOverlay, id: 'routePath'));
+                                type: NOverlayType.pathOverlay,
+                                id: 'routePath'));
                           });
                         },
-                        child: const Text('경로 닫기', style: TextStyle(color: Colors.white),),
+                        child: const Text(
+                          '경로 닫기',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-
 
             // 디버그를 위한 버튼......
             // Positioned(

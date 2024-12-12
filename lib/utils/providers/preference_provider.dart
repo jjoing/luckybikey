@@ -8,7 +8,6 @@ final _authentication = FirebaseAuth.instance;
 class PreferenceProvider with ChangeNotifier {
   List<String> _likes = [];
   List<String> _dislikes = [];
-  bool loaded = false;
 
   List<String> get likes => _likes;
   List<String> get dislikes => _dislikes;
