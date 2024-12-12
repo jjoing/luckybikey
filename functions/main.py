@@ -585,11 +585,11 @@ def update_feedback(req: https_fn.CallableRequest):
 @https_fn.on_call(memory=options.MemoryOption.GB_1)
 def get_rankings(req: https_fn.CallableRequest):
     try:  # 요청 데이터 파싱
-        uid = req.data["uid"]
-    except KeyError as e:
+        uid = str(req.data["uid"])
+    except Exception as e:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message=(f"Missing argument '{e}' in request data."),
+            message=(f"Missing argument '{e}' in request data. {repr(e)}"),
         )
 
     user_ref = firestore_client.collection("users").document(uid)
@@ -599,9 +599,10 @@ def get_rankings(req: https_fn.CallableRequest):
     top_10_users = []
     for i, user in enumerate(all_users):
         if i < 10:
-            top_10_users.append(user.to_dict())
+            user_dict = user.to_dict()
+            top_10_users.append({"fullname": user_dict["fullname"], "totalDistance": user_dict["totalDistance"]})
         if user.id == uid:
             ranking = i + 1
             break
 
-    return {"ranking": ranking, "totaldistance": user_data["totaldistance"], "top_10_users": top_10_users}
+    return {"fullname": user_data["fullname"], "ranking": ranking, "totalDistance": user_data["totalDistance"], "top_10_users": top_10_users}
