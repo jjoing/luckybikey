@@ -36,10 +36,13 @@ class NavigationendState extends State<Navigationend> {
     return AlertDialog(
       title: const Text('안내 종료'),
       content: SizedBox(
-        height: 400,
+        width: MediaQuery.of(context).size.width*0.9,
+        height: 350,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            const Text('목적지에 도착했습니다'),
+            const Text('목적지에 도착했습니다',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.lightGreen),),
             Text('총 이동거리: ${widget.fullDistance.round()}m'),
             Text('총 소요시간: ${(widget.tick * 3 / 60).round()}분'),
             Row(
@@ -47,7 +50,7 @@ class NavigationendState extends State<Navigationend> {
               children: List.generate(5, (index) {
                 return IconButton(
                   icon: Icon(rating > index ? Icons.star : Icons.star_border,
-                      color: Colors.amber, size: 40.0),
+                      color: Colors.amber, size: 30.0),
                   onPressed: () {
                     setState(() {
                       rating = index + 1;
