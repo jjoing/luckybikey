@@ -178,14 +178,14 @@ class _NavigationState extends State<Navigation> {
               contentPadding: const EdgeInsets.all(10),
             ),
             forceGesture: true,
-            // onMapTapped: (point, latLng) {
-            //   setState(() {
-            //     navState['CurrentPosition'] = {
-            //       'latitude': latLng.latitude,
-            //       'longitude': latLng.longitude,
-            //     };
-            //   });
-            // },
+            onMapTapped: (point, latLng) {
+              setState(() {
+                navState['CurrentPosition'] = {
+                  'latitude': latLng.latitude,
+                  'longitude': latLng.longitude,
+                };
+              });
+            },
             onMapReady: (controller) {
               mapControllerCompleter.complete(controller);
               setState(() {

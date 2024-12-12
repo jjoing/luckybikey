@@ -39,7 +39,18 @@ class _tapWidgetState extends State<tapWidget> {
     '주행 중인 길에 \n신호등이 많이 없다면 \n더블탭 해주세요!',
     '이 길의 오르막이 심하면 \n더블탭 해주세요!',
     '이 길이 안전하다고 생각되면 \n더블탭 해주세요!',
-    '이 길이 자전거길이라면\n더블탭 해주세요!'
+    '이 길이 자전거길이라면 \n더블탭 해주세요!'
+  ];
+
+  final List<String> ttsTexts = [
+    '이 길의 풍경이 만족스럽다면 더블탭 해주세요!',
+    '이 길이 안전하다면 더블탭 해주세요!',
+    '이 길의 현재 통행량이 많으면 더블탭 해주세요!',
+    '이 길이 빠르다고 생각하신다면 더블탭 해주세요!.',
+    '주행 중인 길에 신호등이 많이 없다면 더블탭 해주세요!',
+    '이 길의 오르막이 심하면 더블탭 해주세요!',
+    '이 길이 안전하다고 생각되면 더블탭 해주세요!',
+    '이 길이 자전거길이라면 더블탭 해주세요!'
   ];
 
   @override
@@ -62,8 +73,8 @@ class _tapWidgetState extends State<tapWidget> {
         Provider.of<FeedbackProvider>(context);
     if (resetToggle) {
       featureIndex = Random().nextInt(8);
-      widget.tts.speak(featureTexts[featureIndex]);
-      print('tts : ${featureTexts[featureIndex]}');
+      widget.tts.speak(ttsTexts[featureIndex]);
+      print('tts : ${ttsTexts[featureIndex]}');
     }
 
     return GestureDetector(

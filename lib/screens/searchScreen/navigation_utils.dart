@@ -17,12 +17,12 @@ Map<String, dynamic> updateNavState(Map<String, dynamic> navState, double tick,
     NaverMapController? ct, FlutterTts tts) {
   Map beforePosition = navState['CurrentPosition'];
 
-  _determinePosition().then((value) {
-    navState['CurrentPosition'] = {
-      'latitude': value.latitude,
-      'longitude': value.longitude,
-    };
-  });
+  // _determinePosition().then((value) {
+  //   navState['CurrentPosition'] = {
+  //     'latitude': value.latitude,
+  //     'longitude': value.longitude,
+  //   };
+  // });
 
   final distanceDelta = calculateDistance(
     beforePosition['latitude'],
@@ -621,7 +621,7 @@ void _requestRoute(req, routeSelectorProvider) async {
   await Future.forEach(calls, (call) async {
     // Remove [calls[0]] to use all preferences route
     final results = await FirebaseFunctions.instance
-        .httpsCallable('request_route_debug')
+        .httpsCallable('request_route')
         .call(call);
     print('results ${call['Index']}: ${results.data['full_distance']}');
     routeSelectorProvider.setRoute({

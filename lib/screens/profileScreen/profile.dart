@@ -28,6 +28,12 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      final preferenceProvider =
+          Provider.of<PreferenceProvider>(context, listen: false);
+      preferenceProvider.getPreferences();
+    });
   }
 
   @override
@@ -35,11 +41,6 @@ class _ProfileState extends State<Profile> {
     final preferenceProvider = Provider.of<PreferenceProvider>(context);
     final pageProvider = Provider.of<PageProvider>(context, listen: false);
     final kakaoLoginProvider = Provider.of<KakaoLoginProvider>(context);
-
-    if (preferenceProvider.loaded == false) {
-      preferenceProvider.loaded = true;
-      preferenceProvider.getPreferences();
-    }
 
     //final viewModel = MainViewModel(KakaoLogin());
 
