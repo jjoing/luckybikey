@@ -28,8 +28,8 @@ class _ProfileState extends State<Profile> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      final preferenceProvider =
-          Provider.of<PreferenceProvider>(context, listen: false);
+      PreferenceProvider preferenceProvider =
+          context.read<PreferenceProvider>();
       preferenceProvider.getPreferences();
     });
   }
