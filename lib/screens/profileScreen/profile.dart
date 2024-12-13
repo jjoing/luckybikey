@@ -107,7 +107,7 @@ class _ProfileState extends State<Profile> {
               visualDensity: VisualDensity(vertical: -4),
               padding: EdgeInsets.all(0),
               icon: Text(
-                'TOP 10 순위 보기',
+                'TOP 10 라이더 보기',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

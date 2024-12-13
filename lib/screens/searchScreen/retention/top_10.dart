@@ -90,7 +90,7 @@ class _Top10State extends State<Top10> {
         child: Column(
           children: [
             SizedBox(height: 30,),
-            Center(child: Text('Top 10 라이더', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.lightGreen[800]),),),
+            Center(child: Text('TOP 10 라이더', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.lightGreen[800]),),),
             SizedBox(height: 20,),
             Text('내 순위', style: TextStyle(color: Colors.lightGreen),),
             Container(padding: EdgeInsets.all(10),

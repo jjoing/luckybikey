@@ -117,7 +117,7 @@ class _ModalContentState extends State<ModalContent> {
                         },
                         visualDensity: VisualDensity(vertical: -4),
                         padding: EdgeInsets.all(0),
-                        icon: Text('TOP 10 순위 보기'),
+                        icon: Text('TOP 10 라이더 보기'),
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
