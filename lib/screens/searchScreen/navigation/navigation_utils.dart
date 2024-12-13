@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
+
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -27,7 +29,7 @@ Map<String, dynamic> updateNavState(Map<String, dynamic> navState, double tick,
     navState['CurrentPosition']['longitude'],
   );
 
-  if (distanceDelta < 5 &&
+  if (distanceDelta < 2 &&
       tick - navState['toggleTime'] > 30 &&
       navState['finishFlag'] == false) {
     navState['toggleFeedback'] = true;
@@ -458,7 +460,6 @@ void _requestRoute(req, routeSelectorProvider) async {
     "GroupPreference": req['GroupPreference'],
     "LoadMap": false,
   });
-  print(calls[0]);
 
   // Fastest route
   calls.add({
@@ -492,7 +493,7 @@ void _requestRoute(req, routeSelectorProvider) async {
     "UserGroup": 0, // req['UserGroup'],
     "GroupPreference": List<double>.generate(8, (i) {
       if (i == 0) {
-        return req['GroupPreference'][i];
+        return 1.0;
       } else {
         return 0.0;
       }
@@ -515,7 +516,7 @@ void _requestRoute(req, routeSelectorProvider) async {
     "UserGroup": 0, // req['UserGroup'],
     "GroupPreference": List<double>.generate(8, (i) {
       if (i == 1 || i == 6) {
-        return req['GroupPreference'][i];
+        return 1.0;
       } else {
         return 0.0;
       }
@@ -538,7 +539,7 @@ void _requestRoute(req, routeSelectorProvider) async {
     "UserGroup": 0, // req['UserGroup'],
     "GroupPreference": List<double>.generate(8, (i) {
       if (i == 7) {
-        return req['GroupPreference'][i];
+        return 1.0;
       } else {
         return 0.0;
       }
@@ -546,27 +547,28 @@ void _requestRoute(req, routeSelectorProvider) async {
     "LoadMap": false,
   });
 
-  await Future.forEach(calls, (call) async {
-    // Remove [calls[0]] to use all preferences route
-    final results = await FirebaseFunctions.instance
-        .httpsCallable('request_route_debug')
-        .call(call);
-    print('results ${call['Index']}: ${results.data['full_distance']}');
-    routeSelectorProvider.setRoute({
-      "route": _preprocessRoute(
-        List<Map<String, dynamic>>.from(
-          results.data['path'].map((point) {
-            return {
-              "NLatLng": NLatLng(point['lat'], point['lon']),
-              "distance": point['distance'],
-              "id": point['node_id'],
-            };
-          }),
+  await Future.forEach(
+    calls,
+    (call) async {
+      final results = await FirebaseFunctions.instance
+          .httpsCallable('request_route_debug')
+          .call(call);
+      routeSelectorProvider.setRoute({
+        "route": _preprocessRoute(
+          List<Map<String, dynamic>>.from(
+            results.data['path'].map((point) {
+              return {
+                "NLatLng": NLatLng(point['lat'], point['lon']),
+                "distance": point['distance'],
+                "id": point['node_id'],
+              };
+            }),
+          ),
         ),
-      ),
-      "full_distance": results.data['full_distance'],
-    }, call['Index']);
-  });
+        "full_distance": results.data['full_distance'],
+      }, call['Index']);
+    },
+  );
 }
 
 void _requestRoutePublic(reqs, routeSelectorProvider) async {
@@ -593,122 +595,121 @@ void _requestRoutePublic(reqs, routeSelectorProvider) async {
     }),
   );
 
-  // // Fastest route
-  // calls.add(
-  //   List<Map<String, dynamic>>.generate(3, (index) {
-  //     final req = reqs[index];
-  //     return {
-  //       "Index": [1, index],
-  //       "StartPoint": {
-  //         "lat": req['StartPoint']['lat'],
-  //         "lon": req['StartPoint']['lon'],
-  //       },
-  //       "EndPoint": {
-  //         "lat": req['EndPoint']['lat'],
-  //         "lon": req['EndPoint']['lon'],
-  //       },
-  //       "UserTaste": false,
-  //       "UserGroup": 0,   // req['UserGroup'],
-  //       "GroupPreference": req['GroupPreference'],
-  //       "LoadMap": false,
-  //     };
-  //   }),
-  // );
+  // Fastest route
+  calls.add(
+    List<Map<String, dynamic>>.generate(3, (index) {
+      final req = reqs[index];
+      return {
+        "Index": [1, index],
+        "StartPoint": {
+          "lat": req['StartPoint']['lat'],
+          "lon": req['StartPoint']['lon'],
+        },
+        "EndPoint": {
+          "lat": req['EndPoint']['lat'],
+          "lon": req['EndPoint']['lon'],
+        },
+        "UserTaste": false,
+        "UserGroup": 0, // req['UserGroup'],
+        "GroupPreference": req['GroupPreference'],
+        "LoadMap": false,
+      };
+    }),
+  );
 
-  // // 풍경 좋은 경로
-  // calls.add(
-  //   List<Map<String, dynamic>>.generate(3, (index) {
-  //     final req = reqs[index];
-  //     return {
-  //       "Index": [2, index],
-  //       "StartPoint": {
-  //         "lat": req['StartPoint']['lat'],
-  //         "lon": req['StartPoint']['lon'],
-  //       },
-  //       "EndPoint": {
-  //         "lat": req['EndPoint']['lat'],
-  //         "lon": req['EndPoint']['lon'],
-  //       },
-  //       "UserTaste": true,
-  //       "UserGroup": 0,   // req['UserGroup'],
-  //       "GroupPreference": List<double>.generate(8, (i) {
-  //         if (i == 0) {
-  //           return req['GroupPreference'][i];
-  //         } else {
-  //           return 0.0;
-  //         }
-  //       }),
-  //       "LoadMap": false,
-  //     };
-  //   }),
-  // );
+  // 풍경 좋은 경로
+  calls.add(
+    List<Map<String, dynamic>>.generate(3, (index) {
+      final req = reqs[index];
+      return {
+        "Index": [2, index],
+        "StartPoint": {
+          "lat": req['StartPoint']['lat'],
+          "lon": req['StartPoint']['lon'],
+        },
+        "EndPoint": {
+          "lat": req['EndPoint']['lat'],
+          "lon": req['EndPoint']['lon'],
+        },
+        "UserTaste": true,
+        "UserGroup": 0, // req['UserGroup'],
+        "GroupPreference": List<double>.generate(8, (i) {
+          if (i == 0) {
+            return req['GroupPreference'][i];
+          } else {
+            return 0.0;
+          }
+        }),
+        "LoadMap": false,
+      };
+    }),
+  );
 
-  // // 큰 길
-  // calls.add(
-  //   List<Map<String, dynamic>>.generate(3, (index) {
-  //     final req = reqs[index];
-  //     return {
-  //       "Index": [3, index],
-  //       "StartPoint": {
-  //         "lat": req['StartPoint']['lat'],
-  //         "lon": req['StartPoint']['lon'],
-  //       },
-  //       "EndPoint": {
-  //         "lat": req['EndPoint']['lat'],
-  //         "lon": req['EndPoint']['lon'],
-  //       },
-  //       "UserTaste": true,
-  //       "UserGroup": 0,   // req['UserGroup'],
-  //       "GroupPreference": List<double>.generate(8, (i) {
-  //         if (i == 1 || i == 6) {
-  //           return req['GroupPreference'][i];
-  //         } else {
-  //           return 0.0;
-  //         }
-  //       }),
-  //       "LoadMap": false,
-  //     };
-  //   }),
-  // );
+  // 큰 길
+  calls.add(
+    List<Map<String, dynamic>>.generate(3, (index) {
+      final req = reqs[index];
+      return {
+        "Index": [3, index],
+        "StartPoint": {
+          "lat": req['StartPoint']['lat'],
+          "lon": req['StartPoint']['lon'],
+        },
+        "EndPoint": {
+          "lat": req['EndPoint']['lat'],
+          "lon": req['EndPoint']['lon'],
+        },
+        "UserTaste": true,
+        "UserGroup": 0, // req['UserGroup'],
+        "GroupPreference": List<double>.generate(8, (i) {
+          if (i == 1 || i == 6) {
+            return req['GroupPreference'][i];
+          } else {
+            return 0.0;
+          }
+        }),
+        "LoadMap": false,
+      };
+    }),
+  );
 
-  // // 자전거 길
-  // calls.add(
-  //   List<Map<String, dynamic>>.generate(3, (index) {
-  //     final req = reqs[index];
-  //     return {
-  //       "Index": [4, index],
-  //       "StartPoint": {
-  //         "lat": req['StartPoint']['lat'],
-  //         "lon": req['StartPoint']['lon']
-  //       },
-  //       "EndPoint": {
-  //         "lat": req['EndPoint']['lat'],
-  //         "lon": req['EndPoint']['lon']
-  //       },
-  //       "UserTaste": true,
-  //       "UserGroup": 0,   // req['UserGroup'],
-  //       "GroupPreference": List<double>.generate(8, (i) {
-  //         if (i == 7) {
-  //           return req['GroupPreference'][i];
-  //         } else {
-  //           return 0.0;
-  //         }
-  //       }),
-  //       "LoadMap": false,
-  //     };
-  //   }),
-  // );
+  // 자전거 길
+  calls.add(
+    List<Map<String, dynamic>>.generate(3, (index) {
+      final req = reqs[index];
+      return {
+        "Index": [4, index],
+        "StartPoint": {
+          "lat": req['StartPoint']['lat'],
+          "lon": req['StartPoint']['lon']
+        },
+        "EndPoint": {
+          "lat": req['EndPoint']['lat'],
+          "lon": req['EndPoint']['lon']
+        },
+        "UserTaste": true,
+        "UserGroup": 0, // req['UserGroup'],
+        "GroupPreference": List<double>.generate(8, (i) {
+          if (i == 7) {
+            return req['GroupPreference'][i];
+          } else {
+            return 0.0;
+          }
+        }),
+        "LoadMap": false,
+      };
+    }),
+  );
 
-  await Future.forEach(calls, (call) async {
+  await Future.wait(calls.map((call) async {
     // Remove [calls[0]] to use all preferences route
     final List<HttpsCallableResult<dynamic>?> results =
         List<HttpsCallableResult<dynamic>?>.filled(3, null);
-    await Future.forEach(call, (req) async {
-      print(req);
+    await Future.wait(call.map((req) async {
       results[req['Index'][1]] = await FirebaseFunctions.instance
-          .httpsCallable('request_route')
+          .httpsCallable('request_route_seoul')
           .call(req);
-    });
+    }));
     // 모든 route 정보 합치기
     List<Map<String, dynamic>> combinedRoute =
         List<Map<String, dynamic>>.from(results[0]?.data['path'].map((point) {
@@ -745,7 +746,7 @@ void _requestRoutePublic(reqs, routeSelectorProvider) async {
       "route": _preprocessRoute(combinedRoute),
       "full_distance": combinedFullDistance,
     }, call[0]['Index'][0]);
-  });
+  }));
 }
 
 List<Map<String, dynamic>> _preprocessRoute(List<Map<String, dynamic>> route) {
