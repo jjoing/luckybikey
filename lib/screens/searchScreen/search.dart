@@ -12,9 +12,9 @@ import 'retention/modal.dart';
 import 'navigation/navigation.dart';
 import 'navigation/navigation_utils.dart';
 import 'navigation/route_selector.dart';
+
 import '../../components/bottomNaviBar.dart';
 import '../../../utils/providers/route_selector_provider.dart';
-import '../../../utils/providers/kakao_login_provider.dart';
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -87,10 +87,8 @@ class _SearchState extends State<Search> {
   @override
   Widget build(BuildContext context) {
     final Completer<NaverMapController> mapControllerCompleter = Completer();
-    final RouteSelectorProvider routeSelectorProvider =
-        Provider.of<RouteSelectorProvider>(context);
-    final KakaoLoginProvider kakaoLoginProvider =
-        Provider.of<KakaoLoginProvider>(context);
+    final RouteSelectorProvider routeSelectorProvider = Provider.of<RouteSelectorProvider>(context);
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -105,11 +103,10 @@ class _SearchState extends State<Search> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      const SizedBox(
-                        width: 5,
-                      ),
+                      const SizedBox(width: 5,),
                       Column(
                         children: [
+                          // 출발지 검색
                           Container(
                             height: 50,
                             width: MediaQuery.of(context).size.width * 0.72,
@@ -117,7 +114,9 @@ class _SearchState extends State<Search> {
                               borderRadius: BorderRadius.circular(5),
                               color: Colors.white70,
                             ),
-                            child: SearchAnchor(builder: (BuildContext context,
+                            child: SearchAnchor(
+                              viewBackgroundColor: Colors.white,
+                                builder: (BuildContext context,
                                 SearchController controller) {
                               return TextField(
                                 controller: controller,
@@ -185,6 +184,8 @@ class _SearchState extends State<Search> {
                             }),
                           ),
                           const SizedBox(height: 10),
+
+                          // 도착지 검색
                           Container(
                             height: 50,
                             width: MediaQuery.of(context).size.width * 0.72,
@@ -192,7 +193,9 @@ class _SearchState extends State<Search> {
                               borderRadius: BorderRadius.circular(5),
                               color: Colors.white70,
                             ),
-                            child: SearchAnchor(builder: (BuildContext context,
+                            child: SearchAnchor(
+                              viewBackgroundColor: Colors.white,
+                                builder: (BuildContext context,
                                 SearchController controller) {
                               return TextField(
                                 controller: controller,
@@ -260,134 +263,109 @@ class _SearchState extends State<Search> {
                           ),
                         ],
                       ),
-                      SizedBox(
-                        width: 20,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: () => {
-                            if (routeSelectorProvider.selectedIndex == -1)
-                              {
-                                tts.speak("경로를 선택해주세요."),
-                              }
-                            else
-                              {
-                                tts.speak("안내를 시작합니다."),
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return Navigation(
-                                      routeInfo: routeSelectorProvider
-                                              .resultRoute[
-                                          routeSelectorProvider.selectedIndex],
-                                      tts: tts,
-                                      firestore: _firestore,
-                                      authentication: _authentication,
-                                    );
-                                  },
-                                ),
-                              }
-                          },
-                          icon: const Icon(Icons.swap_vert),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 20,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: () {
-                            route = [];
-                            if (searchResult[0].isEmpty ||
-                                searchResult[1].isEmpty) {
-                              tts.speak("출발지와 도착지를 입력해주세요.");
-                              print("출발지와 도착지를 입력해주세요.");
-                            } else {
-                              tts.speak("경로를 찾는 중입니다.");
-                              print("경로를 찾는 중입니다.");
-                              setState(() {
-                                routeSelectorProvider.resultRoute = [
-                                  {},
-                                  {},
-                                  {},
-                                  {},
-                                  {}
-                                ];
-                                searchRoute(
-                                    searchResult,
-                                    _usePublicBike,
-                                    publicBikes,
-                                    _firestore,
-                                    _authentication,
-                                    routeSelectorProvider);
-                                _showRouteSelector = true;
-                              });
 
-                              // searchRoute(searchResult, _usePublicBike,
-                              //         publicBikes, _firestore, _authentication)
-                              //     .then((result) {
-                              //   setState(() {
-                              //     route = result;
-                              //     fullDistance = result[0]['full_distance'];
-                              //   });
-                              //   for (var i = 0; i < route.length; i++) {
-                              //     if (route[i].isEmpty) {
-                              //       continue;
-                              //     }
-                              //     final bikepath = route[i]['route'];
-                              //     ct?.addOverlay(NPathOverlay(
-                              //       id: 'routePath$i',
-                              //       coords: List<NLatLng>.from(bikepath.map(
-                              //           (e) => e[
-                              //               "NLatLng"])), // NLatLng로 변환된 좌표 리스트
-                              //       color: colors[i % colors.length],
-                              //       width: 3,
-                              //     ));
-                              //   }
-                              // ct?.updateCamera(NCameraUpdate.fitBounds(
-                              //   NLatLngBounds.from(
-                              //       route.map((e) => e["NLatLng"])),
-                              //   padding: const EdgeInsets.all(50),
-                              // ));
-                              // ct?.addOverlay(NPathOverlay(
-                              //   id: 'routePath',
-                              //   coords: List<NLatLng>.from(route.map((e) =>
-                              //       e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
-                              //   color: Colors.lightGreen,
-                              //   width: 5,
-                              // ));
-                              // }, onError: (error, stackTrace) {
-                              //   tts.speak("경로를 찾을 수 없습니다.");
-                              //   print(error);
-                              // });
-                              // searchRoute(searchResult, _usePublicBike,
-                              //         publicBikes, _firestore, _authentication)
-                              //     .then((result) {
-                              //   setState(() {
-                              //     route = result['route'];
-                              //     fullDistance = result['full_distance'];
-                              //   });
-                              //   ct?.updateCamera(NCameraUpdate.fitBounds(
-                              //     NLatLngBounds.from(
-                              //         route.map((e) => e["NLatLng"])),
-                              //     padding: const EdgeInsets.all(50),
-                              //   ));
-                              //   ct?.addOverlay(NPathOverlay(
-                              //     id: 'routePath',
-                              //     coords: List<NLatLng>.from(route.map((e) =>
-                              //         e["NLatLng"])), // NLatLng로 변환된 좌표 리스트
-                              //     color: Colors.lightGreen,
-                              //     width: 5,
-                              //   ));
-                              // }, onError: (error, stackTrace) {
-                              //   tts.speak("경로를 찾을 수 없습니다.");
-                              //   print(error);
-                              // });
-                            }
-                          },
-                          icon: const Icon(Icons.search),
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 5,
+                      // 출발/도착 뒤집는 버튼
+                      // SizedBox(
+                      //   width: 20,
+                      //   child: IconButton(
+                      //     padding: EdgeInsets.zero,
+                      //     onPressed: () => {
+                      //       if (routeSelectorProvider.selectedIndex == -1)
+                      //         {
+                      //           tts.speak("경로를 선택해주세요."),
+                      //         }
+                      //       else
+                      //         {
+                      //           tts.speak("안내를 시작합니다."),
+                      //           showDialog(
+                      //             context: context,
+                      //             builder: (BuildContext context) {
+                      //               return Navigation(
+                      //                 routeInfo: routeSelectorProvider
+                      //                         .resultRoute[
+                      //                     routeSelectorProvider.selectedIndex],
+                      //                 tts: tts,
+                      //                 firestore: _firestore,
+                      //                 authentication: _authentication,
+                      //               );
+                      //             },
+                      //           ),
+                      //         }
+                      //     },
+                      //     icon: const Icon(Icons.swap_vert),
+                      //   ),
+                      // ),
+
+                      Column(
+                        children: [
+                          // 검색 버튼
+                          SizedBox(
+                            width: 20,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                route = [];
+                                if (searchResult[0].isEmpty ||
+                                    searchResult[1].isEmpty) {
+                                  tts.speak("출발지와 도착지를 입력해주세요.");
+                                  print("출발지와 도착지를 입력해주세요.");
+                                } else {
+                                  tts.speak("경로를 찾는 중입니다.");
+                                  print("경로를 찾는 중입니다.");
+                                  setState(() {
+                                    routeSelectorProvider.resultRoute = [
+                                      {},
+                                      {},
+                                      {},
+                                      {},
+                                      {}
+                                    ];
+                                    searchRoute(
+                                        searchResult,
+                                        _usePublicBike,
+                                        publicBikes,
+                                        _firestore,
+                                        _authentication,
+                                        routeSelectorProvider);
+                                    _showRouteSelector = true;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.search),
+                            ),
+                          ),
+                          const SizedBox(height: 5,),
+
+                          // 공유자전거 모드 사용 시의 버튼 (따릉이)
+                          SizedBox(
+                            width: 50,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                setState(() {
+                                  _usePublicBike = !_usePublicBike;
+                                });
+                                if (_usePublicBike) {
+                                  ct?.getContentBounds().then((bounds) {
+                                    for (var i = 0; i < publicBikes.length; i++) {
+                                      if (bounds.containsPoint(publicBikes[i]['NLatLng'])) {
+                                        publicMarkers.add(NMarker(
+                                          id: publicBikes[i]['StationId'],
+                                          position: publicBikes[i]['NLatLng'],
+                                          size: const NSize(15, 15),
+                                        ));
+                                      }
+                                    }
+                                    ct?.addOverlayAll(publicMarkers);
+                                  });
+                                } else {
+                                  ct?.clearOverlays();
+                                }
+                              },
+                              icon: Image.asset('assets/images/share_bike_logo.jpeg'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -418,41 +396,7 @@ class _SearchState extends State<Search> {
               ),
             ),
 
-            // 따릉이 사용 시 선택하는 버튼
-            Positioned(
-              top: 80,
-              right: 18,
-              child: SizedBox(
-                width: 50,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    setState(() {
-                      _usePublicBike = !_usePublicBike;
-                    });
-                    if (_usePublicBike) {
-                      ct?.getContentBounds().then((bounds) {
-                        for (var i = 0; i < publicBikes.length; i++) {
-                          if (bounds.containsPoint(publicBikes[i]['NLatLng'])) {
-                            publicMarkers.add(NMarker(
-                              id: publicBikes[i]['StationId'],
-                              position: publicBikes[i]['NLatLng'],
-                              size: const NSize(15, 15),
-                            ));
-                          }
-                        }
-                        ct?.addOverlayAll(publicMarkers);
-                      });
-                    } else {
-                      ct?.clearOverlays();
-                    }
-                  },
-                  icon: Image.asset('assets/images/share_bike_logo.jpeg'),
-                ),
-              ),
-            ),
-
-            // 유저 리텐션을 위한 버튼
+            // 유저 리텐션을 위한 하프 모달 버튼
             const Positioned(
               bottom: 15,
               left: 0,
