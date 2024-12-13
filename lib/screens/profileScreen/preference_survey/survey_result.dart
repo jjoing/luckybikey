@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+
+import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
-import 'kakao_share.dart';
 import '../../../utils/providers/page_provider.dart';
 import '../../../utils/providers/preference_provider.dart';
 import '../../../utils/providers/kakao_login_provider.dart';
+
+import 'kakao_share.dart';
 import 'edit_keyword.dart';
 
 class SurveyResultPage extends StatelessWidget {

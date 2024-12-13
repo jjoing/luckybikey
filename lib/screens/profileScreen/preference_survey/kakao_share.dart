@@ -1,12 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
+
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:screenshot/screenshot.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 
 Future<void> kakaoShareWithImage(Uint8List imageBytes) async {
   try {

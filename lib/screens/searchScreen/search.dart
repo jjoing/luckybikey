@@ -7,7 +7,6 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
 import 'retention/modal.dart';
 import 'navigation/navigation.dart';
@@ -543,56 +542,56 @@ class _SearchState extends State<Search> {
               ),
 
             // 디버그를 위한 버튼......
-            Positioned(
-              // Button for debugging
-              bottom: 50,
-              left: 0,
-              right: 0,
-              child: ElevatedButton(
-                onPressed: () {
-                  // FirebaseFunctions.instance.httpsCallable('request_route')({
-                  //   "Index": 0,
-                  //   "StartPoint": {
-                  //     "lat": 37.5551786,
-                  //     "lon": 126.9368975,
-                  //   },
-                  //   "EndPoint": {
-                  //     "lat": 37.5499338,
-                  //     "lon": 126.9145408,
-                  //   },
-                  //   "UserTaste": false,
-                  //   "UserGroup": 0,
-                  //   "GroupPreference": [
-                  //     0.8947368421052632,
-                  //     0.15789473684210528,
-                  //     -0.9999999999999999,
-                  //     -0.9999999999999999,
-                  //     -1.0,
-                  //     0.15789473684210523,
-                  //     -0.15789473684210525,
-                  //     0.5789473684210527
-                  //   ],
-                  //   "LoadMap": false,
-                  // });
-                  FirebaseFunctions.instance.httpsCallable('request_route')({
-                    "Index": 1,
-                    "StartPoint": {
-                      "lat": 0,
-                      "lon": 0,
-                    },
-                    "EndPoint": {
-                      "lat": 0,
-                      "lon": 0,
-                    },
-                    "UserTaste": false,
-                    "UserGroup": 0,
-                    "GroupPreference": [0],
-                    "LoadMap": true,
-                  });
-                },
-                child: const Text('Debug'),
-              ),
-            ),
+            // Positioned(
+            //   // Button for debugging
+            //   bottom: 50,
+            //   left: 0,
+            //   right: 0,
+            //   child: ElevatedButton(
+            //     onPressed: () {
+            //       // FirebaseFunctions.instance.httpsCallable('request_route')({
+            //       //   "Index": 0,
+            //       //   "StartPoint": {
+            //       //     "lat": 37.5551786,
+            //       //     "lon": 126.9368975,
+            //       //   },
+            //       //   "EndPoint": {
+            //       //     "lat": 37.5499338,
+            //       //     "lon": 126.9145408,
+            //       //   },
+            //       //   "UserTaste": false,
+            //       //   "UserGroup": 0,
+            //       //   "GroupPreference": [
+            //       //     0.8947368421052632,
+            //       //     0.15789473684210528,
+            //       //     -0.9999999999999999,
+            //       //     -0.9999999999999999,
+            //       //     -1.0,
+            //       //     0.15789473684210523,
+            //       //     -0.15789473684210525,
+            //       //     0.5789473684210527
+            //       //   ],
+            //       //   "LoadMap": false,
+            //       // });
+            //       FirebaseFunctions.instance.httpsCallable('request_route')({
+            //         "Index": 1,
+            //         "StartPoint": {
+            //           "lat": 0,
+            //           "lon": 0,
+            //         },
+            //         "EndPoint": {
+            //           "lat": 0,
+            //           "lon": 0,
+            //         },
+            //         "UserTaste": false,
+            //         "UserGroup": 0,
+            //         "GroupPreference": [0],
+            //         "LoadMap": true,
+            //       });
+            //     },
+            //     child: const Text('Debug'),
+            //   ),
+            // ),
           ],
         ),
       ),

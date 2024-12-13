@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:provider/provider.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
 import '../../utils/providers/page_provider.dart';
 import '../../utils/providers/preference_provider.dart';
