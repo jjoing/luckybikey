@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'ranking_card.dart';
+import 'top_10.dart';
 
 final _firestore = FirebaseFirestore.instance;
 final _authentication = FirebaseAuth.instance;
@@ -72,23 +73,25 @@ class _ModalContentState extends State<ModalContent> {
             ),
             builder: (BuildContext context) {
               return Container(
-                height: MediaQuery.of(context).size.height*0.25,
+                height: MediaQuery.of(context).size.height*0.35,
                 color: Colors.transparent,
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
+                      SizedBox(height: 20,),
                       // Firestore 데이터를 표시
                       Text(
-                        '$fullName님은 현재 ${totalDistance/1000} km 주행 중~',
+                        '$fullName 라이더님은 현재 \n    ${totalDistance/1000} km 주행 중~',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
+                          color: Colors.lightGreen[800]
                         ),
                       ),
-                      SizedBox(height: 5,),
-                      TextButton(
+
+                      SizedBox(height: 10,),
+                      IconButton(
                         onPressed: () {
                           // Dialog를 띄우는 코드
                           showDialog(
@@ -98,7 +101,23 @@ class _ModalContentState extends State<ModalContent> {
                             },
                           );
                         },
-                        child: Text('순위 카드 보기'),
+                        visualDensity: VisualDensity(vertical: -4),
+                        padding: EdgeInsets.all(0),
+                        icon: Text('내 순위 카드 보기'),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          // Dialog를 띄우는 코드
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return Top10();
+                            },
+                          );
+                        },
+                        visualDensity: VisualDensity(vertical: -4),
+                        padding: EdgeInsets.all(0),
+                        icon: Text('TOP 10 라이더 보기'),
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(

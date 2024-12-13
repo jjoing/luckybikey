@@ -12,10 +12,8 @@ import 'preference_survey/intro.dart';
 import '../../components/bottomNaviBar.dart';
 
 import '../searchScreen/retention/ranking_card.dart';
+import '../searchScreen/retention/top_10.dart';
 
-import '../../utils/login/login.dart';
-import '../../utils/login/social_login.dart';
-import '../../utils/login/kakao_login.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -74,27 +72,50 @@ class _ProfileState extends State<Profile> {
                 ),
               ),
             ),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  // Dialog를 띄우는 코드
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return RankingCard();
-                    },
-                  );
-                },
-                child: const Text(
-                  '랭킹 확인하기',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.lightGreen,
-                  ),
+            SizedBox(height: 10,),
+            IconButton(
+              onPressed: () {
+                // Dialog를 띄우는 코드
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return RankingCard();
+                  },
+                );
+              },
+              visualDensity: VisualDensity(vertical: -4),
+              padding: EdgeInsets.all(0),
+              icon: const Text(
+                '내 순위 카드 보기',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.lightGreen,
                 ),
               ),
             ),
+            IconButton(
+              onPressed: () {
+                // Dialog를 띄우는 코드
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return Top10();
+                  },
+                );
+              },
+              visualDensity: VisualDensity(vertical: -4),
+              padding: EdgeInsets.all(0),
+              icon: Text(
+                'TOP 10 라이더 보기',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.lightGreen,
+                ),
+              ),
+            ),
+            SizedBox(height: 5,),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
