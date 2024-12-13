@@ -103,7 +103,7 @@ class _ModalContentState extends State<ModalContent> {
                         },
                         visualDensity: VisualDensity(vertical: -4),
                         padding: EdgeInsets.all(0),
-                        icon: Text('내 순위 카드 보기'),
+                        icon: Text('내 순위 카드 보기', style: TextStyle(fontSize: 15),),
                       ),
                       IconButton(
                         onPressed: () {
@@ -117,7 +117,7 @@ class _ModalContentState extends State<ModalContent> {
                         },
                         visualDensity: VisualDensity(vertical: -4),
                         padding: EdgeInsets.all(0),
-                        icon: Text('TOP 10 라이더 보기'),
+                        icon: Text('TOP 10 라이더 보기', style: TextStyle(fontSize: 13),),
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
