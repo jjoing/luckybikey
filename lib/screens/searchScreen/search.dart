@@ -72,6 +72,17 @@ class _SearchState extends State<Search> {
     tts.setSpeechRate(0.5); //말하는 속도(0.1~2.0)
     tts.setVolume(0.6); //볼륨(0.0~1.0)
     tts.setPitch(1); //음높이(0.5~2.0)
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      pulicBike().then((result) {
+        setState(() {
+          publicBikes = result;
+          print("public bike data loaded");
+        });
+      }, onError: (error) {
+        print(error);
+      });
+    });
   }
 
   @override
@@ -417,20 +428,9 @@ class _SearchState extends State<Search> {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   onPressed: () {
-                    if (publicBikes.isEmpty) {
-                      pulicBike().then((result) {
-                        setState(() {
-                          publicBikes = result;
-                          _usePublicBike = true;
-                        });
-                      }, onError: (error) {
-                        print(error);
-                      });
-                    } else {
-                      setState(() {
-                        _usePublicBike = !_usePublicBike;
-                      });
-                    }
+                    setState(() {
+                      _usePublicBike = !_usePublicBike;
+                    });
                     if (_usePublicBike) {
                       ct?.getContentBounds().then((bounds) {
                         for (var i = 0; i < publicBikes.length; i++) {
@@ -543,32 +543,56 @@ class _SearchState extends State<Search> {
               ),
 
             // 디버그를 위한 버튼......
-            // Positioned(
-            //   // Button for debugging
-            //   bottom: 50,
-            //   left: 0,
-            //   right: 0,
-            //   child: ElevatedButton(
-            //     onPressed: () {
-            //       FirebaseFunctions.instance.httpsCallable('request_route')({
-            //         "Index": 1,
-            //         "StartPoint": {
-            //           "lat": 0,
-            //           "lon": 0,
-            //         },
-            //         "EndPoint": {
-            //           "lat": 0,
-            //           "lon": 0,
-            //         },
-            //         "UserTaste": false,
-            //         "UserGroup": 0,
-            //         "GroupPreference": [0],
-            //         "LoadMap": true,
-            //       });
-            //     },
-            //     child: const Text('Debug'),
-            //   ),
-            // ),
+            Positioned(
+              // Button for debugging
+              bottom: 50,
+              left: 0,
+              right: 0,
+              child: ElevatedButton(
+                onPressed: () {
+                  // FirebaseFunctions.instance.httpsCallable('request_route')({
+                  //   "Index": 0,
+                  //   "StartPoint": {
+                  //     "lat": 37.5551786,
+                  //     "lon": 126.9368975,
+                  //   },
+                  //   "EndPoint": {
+                  //     "lat": 37.5499338,
+                  //     "lon": 126.9145408,
+                  //   },
+                  //   "UserTaste": false,
+                  //   "UserGroup": 0,
+                  //   "GroupPreference": [
+                  //     0.8947368421052632,
+                  //     0.15789473684210528,
+                  //     -0.9999999999999999,
+                  //     -0.9999999999999999,
+                  //     -1.0,
+                  //     0.15789473684210523,
+                  //     -0.15789473684210525,
+                  //     0.5789473684210527
+                  //   ],
+                  //   "LoadMap": false,
+                  // });
+                  FirebaseFunctions.instance.httpsCallable('request_route')({
+                    "Index": 1,
+                    "StartPoint": {
+                      "lat": 0,
+                      "lon": 0,
+                    },
+                    "EndPoint": {
+                      "lat": 0,
+                      "lon": 0,
+                    },
+                    "UserTaste": false,
+                    "UserGroup": 0,
+                    "GroupPreference": [0],
+                    "LoadMap": true,
+                  });
+                },
+                child: const Text('Debug'),
+              ),
+            ),
           ],
         ),
       ),

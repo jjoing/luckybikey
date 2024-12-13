@@ -96,9 +96,9 @@ class PreferenceProvider with ChangeNotifier {
         if (data['attributes']['uphill'] == -1) {
           _dislikes.add('오르막');
         }
+        notifyListeners();
       }
     });
-    notifyListeners();
   }
 
   // Method to set likes
