@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -105,7 +106,7 @@ class _Top10State extends State<Top10> {
                 children: [
                   // 순위 표시
                   Text(
-                    '${ranking}위',
+                    '${ranking}',
                     style: TextStyle(
                       color: Colors.lightGreen,
                       fontWeight: FontWeight.bold,

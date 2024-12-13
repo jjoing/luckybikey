@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../utils/providers/preference_provider.dart';
-import 'survey_result.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../utils/providers/preference_provider.dart';
+import 'survey_result.dart';
+
 
 final _firestore = FirebaseFirestore.instance;
 final _authentication = FirebaseAuth.instance;
